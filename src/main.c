@@ -1,12 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-
-/*
-    Vale only supports the x86_64 architecture.
-
-    Compiling to a different architecture will result
-    in unattended side effects, or completely unable to boot.
-*/
 #if defined(__x86_64__)
     #include "arch/x86_64/gdt.h"
     #include "arch/x86_64/idt.h"
@@ -17,10 +10,22 @@
     #error "Unsupported architecture. Compile for x86_64."
 #endif
 
+#include "limine/include/limine.h"
+
 #include "drivers/memory/pmm.h"
 #include "drivers/memory/vmm.h"
 #include "drivers/memory/heap.h"
 #include "drivers/fb.h"
+
+#include "fs/vfs.h"
+#include "fs/devfs.h"
+#include "fs/initramfs.h"
+
+__attribute__((used, section(".requests")))
+static volatile struct limine_module_request module_request = {
+    .id = LIMINE_MODULE_REQUEST_ID,
+    .revision = 0
+};
 
 static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
@@ -32,72 +37,59 @@ static void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" :: "a"(val), "Nd"(port));
 }
 
-// Multithreading Testing(R)
-
-static void busy_wait() {
-    for (volatile int i = 0; i < 400000; i++) {
-        __asm__ volatile("pause");
-    }
-}
-
-// First independent thread worker
-void sample_thread_one(void) {
-    __asm__ volatile("sti");
-
-    while (1) {
-        printf("[Thread 1] Hello from execution context alpha!\n", 0x00FF00);
-        busy_wait();
-    }
-}
-
-// Second independent thread worker
-void sample_thread_two(void) {
-    __asm__ volatile("sti");
-
-    while (1) {
-        printf("[Thread 2] Greetings from execution context beta!\n", 0xFC036F);
-        busy_wait();
-    }
-}
-
 void _start(void) {
-    __asm__ volatile("cli"); // disable interrupts; no idt yet
+    __asm__ volatile("cli");
 
     remap_pic(32, 40);
 
     init_gdt();
     init_idt();
 
-    init_fb(); // initialize framebuffer early for early logging
+    init_fb(); 
     clear(0x000000);
 
     pit_init(100);
 
     inb(0x60);
-
-    outb(0x21, 0xFC); // unmask irq0 & irq1 from PIC
+    outb(0x21, 0xFC); 
 
     init_pmm();
     init_vmm();
     init_heap();
     
-    // Initialize scheduler framework
     init_scheduler();
 
-    printf("Welcome to Vale ", 0xFFFFFF);
+    printf("\nWelcome to Vale ", 0xFFFFFF);
     printf("0.1.0-alpha.1!\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Dalenuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
-    // Create experimental threads
-    kthread_create(sample_thread_one);
-    kthread_create(sample_thread_two);
+    __asm__ volatile("sti");
 
-    __asm__ volatile("sti"); // idt set up, interrupts safe
+    vfs_node_t *devfs_root_node = init_devfs();
 
-    // The main execution stream loop context
-    while (1) {
-        printf("[Main Kernel] Loop core execution cycle.\n", 0xFFFFFF);
-        busy_wait();
+    if (module_request.response != NULL && module_request.response->module_count > 0) {
+        struct limine_file *ramfs_file = module_request.response->modules[0];
+        printf("[VFS] Booting from Initramfs...\n", 0x00FFCC);
+        
+        fs_root = init_initramfs((uint64_t)ramfs_file->address);
+    } else {
+        printf("[VFS] No Initramfs module found!\n", 0xFF0000);
+        for (;;) __asm__ volatile("hlt");
     }
+
+    devfs_register(fb_create_vfs_node());
+    
+    vfs_node_t *dev_mountpoint = vfs_get_node_by_path("/dev");
+    
+    if (dev_mountpoint) {
+        vfs_mount(dev_mountpoint, devfs_root_node);
+        printf("[VFS] DevFS mounted to /dev successfully.\n", 0x00FF00);
+        
+        printf("[VFS] All printf statements are now full VFS system calls!\n", 0x00FF00);
+    } else {
+        printf("[VFS] FAILED: Could not find /dev in Initramfs\n", 0xFF0000);
+    }
+
+    for (;;)__asm__ volatile("hlt");
 }

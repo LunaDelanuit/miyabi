@@ -30,12 +30,12 @@ GNU General Public License for more details.
 Required build tools:
 
 * Any GNU/Linux system.
-* Python 3.14 `python3`
+* Python 3.x `python3`
 * GNU C Compiler `gcc`
 * Netwide Assembler `nasm`
 * GNU Linker `ld`
 * Xorriso `xorriso`
-* Limine 12 `limine`
+* Limine 10.x-12.x `limine`
 
 Optionally:
 
@@ -52,7 +52,8 @@ Currently, Vale has:
 * GDT & IDT
 * PIC Interrupts
 * Stable Heap allocator
-* Basic FrameBuffer
+* Device Framebuffer using VFS
+* Initramfs
 
 Limited to:
 
@@ -63,7 +64,7 @@ Limited to:
 Does not have:
 
 * Multi-architectural support
-* Filesystems
+* Filesystems (tho we have an initramfs)
 * Process Switching
 * System Calls
 * Everything else
