@@ -21,7 +21,7 @@ ASFLAGS := -f elf64
 LDFLAGS := -nostdlib -z max-page-size=0x1000 -T linker.ld
 
 KERNEL := $(BUILD)/kernel.elf
-ISO := $(BUILD)/vale.iso
+ISO := $(BUILD)/miyabi.iso
 
 LIMINE_BIN := limine
 

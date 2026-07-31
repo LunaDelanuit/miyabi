@@ -59,8 +59,8 @@ void _start(void) {
     
     init_scheduler();
 
-    printf("\nWelcome to Vale ", 0xFFFFFF);
-    printf("0.1.0-alpha.1!\n", 0xFFFFFF);
+    printf("\nWelcome to Miyabi ", 0xFFFFFF);
+    printf("0.1\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Dalenuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 

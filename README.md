@@ -1,12 +1,14 @@
-# Vale
+As of July 31st, 2026, I have decided to rename Vale to Miyabi. This change is partly due to my new identity, and I would prefer not to have any ties to my old identity which I dislike. Miyabi is personally a better name for the project as it means "elegance" in Japanese, which is the project's core philosophy.
 
-Vale is a 64-bit operating system available for the x86_64 architecture.  
-At its current state, Vale is extremely limited, but has been tested on real hardware.
+# Miyabi
 
-I plan to make Vale Unix-like and potentially POSIX-complaint.
+Miyabi is a 64-bit operating system available for the x86_64 architecture.  
+At its current state, Miyabi is extremely limited, but has been tested on real hardware.
 
-I *do not* plan to ever make Vale UNIX certified, nor do I plan to make Vale a part of the GNU Project for now.  
-Vale is an independant operating system with no current intentions of replacing existing systems such as GNU/Linux.
+I plan to make Miyabi Unix-like and potentially POSIX-complaint.
+
+I *do not* plan to ever make Miyabi UNIX certified, nor do I plan to make Miyabi a part of the GNU Project for now.  
+Miyabi is an independant operating system with no current intentions of replacing existing systems such as GNU/Linux.
 
 Now I am following my own custom model, a hybrid of a Microkernel and a Monolithic-kernel. It reduces the overhead and reduency of microkernel designs with the IPC,
 but also less complex and tied together than a Monolithic-kernel, allowing theoretically better stability.
@@ -39,14 +41,14 @@ Required build tools:
 
 Optionally:
 
-* QEMU `qemu-system-x86_64` if you want to emulate Vale.
+* QEMU `qemu-system-x86_64` if you want to emulate Miyabi.
 
 In the project root, simply run `make`; an ISO file will be generated in ./build.
-Alternatively, type `make run` to emulate Vale using QEMU.
+Alternatively, type `make run` to emulate Miyabi using QEMU.
 
 ## Features
 
-Currently, Vale has:
+Currently, Miyabi has:
 
 * BIOS & UEFI Support
 * GDT & IDT
@@ -73,7 +75,7 @@ Does not have:
 
 ### Limine
 
-Limine is used as the built-in bootloader for Vale.
+Limine is used as the built-in bootloader for Miyabi.
 
 Copyright (C) 2019-2026 Mintsuki and contributors.
 
@@ -104,7 +106,7 @@ Please use this link to view Limine:
 
 ### Limine Protocol
 
-Limine Protocol is used for the internal systems and ease of use when developing Vale.
+Limine Protocol is used for the internal systems and ease of use when developing Miyabi.
 It provides an easy to use starting point with BIOS and UEFI support, basic implementations set up.
 
 Copyright (C) 2022-2026 Mintsuki and contributors.
