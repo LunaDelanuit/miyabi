@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "vfs.h"
-#include "../drivers/fb.h"
 
 vfs_node_t *fs_root = NULL;
 
@@ -35,9 +34,7 @@ vfs_node_t *vfs_get_node_by_path(const char *path) {
     vfs_node_t *current_node = fs_root;
     char token[128];
     int offset = 0;
-    
-    printf("[VFS Test] Attempting to resolve absolute path '%s'...\n", 0x888888, path);
-    
+
     while ((offset = get_next_token(path, offset, token)) != -1) {
         if (!current_node) return NULL;
         

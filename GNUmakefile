@@ -10,7 +10,7 @@ BIN_DIR := bin
 BUILD := build
 ISO_DIR := $(BUILD)/iso
 
-FONT_HEX := $(BIN_DIR)/unifont_all-17.0.04.hex
+FONT ?= $(BIN_DIR)/unifont_all-17.0.04.hex
 FONT_BIN := $(BUILD)/font.bin
 FONT_OBJ := $(BUILD)/font.o
 
@@ -27,6 +27,7 @@ LIMINE_BIN := limine
 
 SRC := $(shell find $(SRC_DIR) -name "*.c")
 ASM := $(shell find $(SRC_DIR) -name "*.asm")
+
 OBJ := $(patsubst $(SRC_DIR)/%.c,$(BUILD)/%.o,$(SRC)) \
        $(patsubst $(SRC_DIR)/%.asm,$(BUILD)/%.o,$(ASM))
 
@@ -36,9 +37,9 @@ $(KERNEL): $(OBJ) $(FONT_OBJ)
 	mkdir -p $(BUILD)
 	$(LD) $(OBJ) $(FONT_OBJ) -o $@ $(LDFLAGS)
 
-$(FONT_BIN): $(FONT_HEX) $(SCRIPTS_DIR)/hex2bin.py
+$(FONT_BIN): $(FONT) $(SCRIPTS_DIR)/font2bin.py
 	mkdir -p $(BUILD)
-	python3 $(SCRIPTS_DIR)/hex2bin.py $(FONT_HEX) $(FONT_BIN)
+	python3 $(SCRIPTS_DIR)/font2bin.py $(FONT) $(FONT_BIN)
 
 $(FONT_OBJ): $(FONT_BIN)
 	cd $(BUILD) && $(OBJCOPY) -I binary -O elf64-x86-64 -B i386:x86-64 font.bin font.o

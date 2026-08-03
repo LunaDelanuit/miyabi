@@ -59,22 +59,19 @@ void _start(void) {
     
     init_scheduler();
 
-    printf("\nWelcome to Miyabi ", 0xFFFFFF);
-    printf("0.1\n", 0xFFFFFF);
-    printf("Copyright (c) 2026 Luna Dalenuit and contributers, ", 0xCC00DD);
-    printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
-
     __asm__ volatile("sti");
+
+    printf("\n", 0x000000);
 
     vfs_node_t *devfs_root_node = init_devfs();
 
     if (module_request.response != NULL && module_request.response->module_count > 0) {
         struct limine_file *ramfs_file = module_request.response->modules[0];
-        printf("[VFS] Booting from Initramfs...\n", 0x00FFCC);
+        printf("VFS: Booting from Initramfs...\n", 0x00FFCC);
         
         fs_root = init_initramfs((uint64_t)ramfs_file->address);
     } else {
-        printf("[VFS] No Initramfs module found!\n", 0xFF0000);
+        printf("VFS: No Initramfs module found! Please check your limine config...\n", 0xFF0000);
         for (;;) __asm__ volatile("hlt");
     }
 
@@ -84,12 +81,15 @@ void _start(void) {
     
     if (dev_mountpoint) {
         vfs_mount(dev_mountpoint, devfs_root_node);
-        printf("[VFS] DevFS mounted to /dev successfully.\n", 0x00FF00);
-        
-        printf("[VFS] All printf statements are now full VFS system calls!\n", 0x00FF00);
+        printf("VFS: DevFS mounted to /dev successfully.\n", 0x00FF00);
     } else {
-        printf("[VFS] FAILED: Could not find /dev in Initramfs\n", 0xFF0000);
+        printf("VFS: Could not find /dev in Initramfs!\n", 0xFF0000);
     }
+
+    printf("\nWelcome to Miyabi ", 0xFFFFFF);
+    printf("0.1\n", 0xFFFFFF);
+    printf("Copyright (c) 2026 Luna Dalenuit and contributers, ", 0xCC00DD);
+    printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
     for (;;)__asm__ volatile("hlt");
 }

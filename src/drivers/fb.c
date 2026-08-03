@@ -268,7 +268,6 @@ void printf(const char *fmt, uint32_t color, ...) {
     if (fb_vfs_node && fb_vfs_node->write) {
         fb_vfs_node->write(fb_vfs_node, 0, buf_idx, (uint8_t*)out_buf);
     } else {
-        put_char('>', 0xFF964F);
         spin_lock(&fb_lock);
         for (int i = 0; i < buf_idx; i++) {
             put_char(out_buf[i], color);
