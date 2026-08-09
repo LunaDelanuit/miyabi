@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "vmm.h"
 #include "pmm.h"
+#include "../../modules/ksym.h"
 
 #define HEAP_START 0xFFFFFFFFC0000000ULL
 #define HEAP_INITIAL_SIZE (16 * 1024 * 1024ULL)
@@ -112,3 +113,6 @@ void kfree(void *ptr) {
         current = current->next;
     }
 }
+
+EXPORT_SYMBOL(kmalloc);
+EXPORT_SYMBOL(kfree);

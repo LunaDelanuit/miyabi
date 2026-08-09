@@ -59,3 +59,30 @@ vfs_node_t *vfs_get_node_by_path(const char *path) {
     
     return current_node;
 }
+
+vfs_node_t *vfs_open(const char *path, uint32_t flags) {
+    vfs_node_t *node = vfs_get_node_by_path(path);
+    
+    if (node) {
+        if (node->open) {
+            node->open(node, flags);
+        }
+        return node;
+    }
+    
+    return NULL;
+}
+
+uint64_t vfs_read(vfs_node_t *node, uint8_t *buffer, uint64_t size, uint64_t offset) {
+    if (node && node->read) {
+        return node->read(node, offset, size, buffer);
+    }
+    
+    return 0;
+}
+
+void vfs_close(vfs_node_t *node) {
+    if (node && node->close) {
+        node->close(node);
+    }
+}

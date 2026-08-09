@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "../arch/x86_64/spinlock.h"
 #include "../drivers/memory/heap.h"
+#include "../modules/ksym.h"
 
 #define FONT_WIDTH  8
 #define FONT_HEIGHT 16
@@ -275,3 +276,5 @@ void printf(const char *fmt, uint32_t color, ...) {
         spin_unlock(&fb_lock);
     }
 }
+
+EXPORT_SYMBOL(printf);

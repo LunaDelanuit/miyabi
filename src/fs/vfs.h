@@ -14,11 +14,14 @@
 #define FS_SYMLINK      0x20
 #define FS_MOUNTPOINT   0x40
 
+#define VFS_FLAG_READ   0x01
+#define VFS_FLAG_WRITE  0x02
+
 struct vfs_node;
 
 typedef uint64_t (*read_type_t)(struct vfs_node*, uint64_t, uint64_t, uint8_t*);
 typedef uint64_t (*write_type_t)(struct vfs_node*, uint64_t, uint64_t, uint8_t*);
-typedef void (*open_type_t)(struct vfs_node*);
+typedef void (*open_type_t)(struct vfs_node*, uint32_t);
 typedef void (*close_type_t)(struct vfs_node*);
 typedef struct vfs_node* (*readdir_type_t)(struct vfs_node*, uint32_t);
 typedef struct vfs_node* (*finddir_type_t)(struct vfs_node*, char *name);
@@ -45,5 +48,8 @@ extern vfs_node_t *fs_root;
 
 void vfs_mount(vfs_node_t *mountpoint, vfs_node_t *target);
 vfs_node_t *vfs_get_node_by_path(const char *path);
+vfs_node_t *vfs_open(const char *path, uint32_t flags);
+uint64_t vfs_read(vfs_node_t *node, uint8_t *buffer, uint64_t size, uint64_t offset);
+void vfs_close(vfs_node_t *node);
 
 #endif

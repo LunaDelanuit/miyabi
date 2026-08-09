@@ -21,6 +21,11 @@ SECTIONS
 
     .rodata : {
         *(.rodata*)
+
+        . = ALIGN(8);
+        PROVIDE(__start_ksymtab = .);
+        KEEP(*(.ksymtab))
+        PROVIDE(__stop_ksymtab = .);
     } :rodata
 
     .limine_requests : {

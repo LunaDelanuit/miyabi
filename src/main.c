@@ -21,6 +21,8 @@
 #include "fs/devfs.h"
 #include "fs/initramfs.h"
 
+#include "modules/loader.h"
+
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST_ID,
@@ -90,6 +92,13 @@ void _start(void) {
     printf("0.1\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Dalenuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
+
+    kernel_module_t *test_mod = (kernel_module_t *)load_module_from_file("/usr/lib/modules/test_module.ko");
+    if (test_mod) {
+        printf("Successfully loaded and initialized test_module.ko!\n", 0x00FF00);
+    } else {
+        printf("Failed to load test_module.ko.\n", 0xFF0000);
+    }
 
     for (;;)__asm__ volatile("hlt");
 }

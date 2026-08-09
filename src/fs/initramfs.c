@@ -43,12 +43,42 @@ static int tar_match_name(const char *tar_name, const char *search_name) {
 }
 
 static vfs_node_t *ramfs_finddir(vfs_node_t *node, char *name) {
-    for (uint32_t i = 0; i < ramfs_node_count; i++) {
-        if (tar_match_name(ramfs_nodes[i]->name, name)) {
-            return ramfs_nodes[i];
+    char expected_path[256];
+    int i = 0;
+
+    if (node != ramfs_root) {
+        while (node->name[i] && i < 255) {
+            expected_path[i] = node->name[i];
+            i++;
+        }
+        if (i > 0 && expected_path[i-1] != '/') {
+            expected_path[i++] = '/';
+        }
+    }
+
+    int j = 0;
+    while (name[j] && i < 255) {
+        expected_path[i++] = name[j++];
+    }
+    expected_path[i] = '\0';
+
+    for (uint32_t k = 0; k < ramfs_node_count; k++) {
+        if (tar_match_name(ramfs_nodes[k]->name, expected_path)) {
+            return ramfs_nodes[k];
         }
     }
     return NULL;
+}
+
+static uint64_t ramfs_read(vfs_node_t *node, uint64_t offset, uint64_t size, uint8_t *buffer) {
+    if (offset >= node->length) return 0;
+    if (offset + size > node->length) size = node->length - offset;
+    
+    uint8_t *file_data = (uint8_t *)node->ptr;
+    for (uint64_t i = 0; i < size; i++) {
+        buffer[i] = file_data[offset + i];
+    }
+    return size;
 }
 
 vfs_node_t *init_initramfs(uint64_t ramfs_addr) {
@@ -80,6 +110,8 @@ vfs_node_t *init_initramfs(uint64_t ramfs_addr) {
         } else {
             node->flags = FS_FILE;
             node->length = size;
+            node->read = ramfs_read;
+            node->ptr = (struct vfs_node *)((uint64_t)header + 512); 
         }
         
         ramfs_nodes[ramfs_node_count++] = node;
