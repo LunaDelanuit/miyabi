@@ -12,6 +12,8 @@
 
 #include "limine/include/limine.h"
 
+#include "cmdline.h"
+
 #include "drivers/memory/pmm.h"
 #include "drivers/memory/vmm.h"
 #include "drivers/memory/heap.h"
@@ -20,8 +22,6 @@
 #include "fs/vfs.h"
 #include "fs/devfs.h"
 #include "fs/initramfs.h"
-
-#include "modules/loader.h" // Currently broken
 
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
@@ -50,6 +50,8 @@ void _start(void) {
     init_fb();
     clear(0x000000);
 
+    read_boot_cmdline();
+
     pit_init(100);
 
     inb(0x60);
@@ -69,7 +71,7 @@ void _start(void) {
 
     if (module_request.response != NULL && module_request.response->module_count > 0) {
         struct limine_file *ramfs_file = module_request.response->modules[0];
-        printf("VFS: Booting from Initramfs...\n", 0x00FFCC);
+        if (DEBUG) printf("VFS: Booting from Initramfs...\n", 0x00FFCC);
 
         fs_root = init_initramfs((uint64_t)ramfs_file->address);
     } else {
@@ -92,21 +94,6 @@ void _start(void) {
     printf("0.1\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
-
-    vfs_node_t *lib_directory = vfs_get_node_by_path("/lib");
-    if (lib_directory) {
-        printf("We should not get an error.\n", 0x00FF00);
-    } else {
-        printf("/usr/lib DOES NOT EXIST :O\n", 0xFF0000);
-        for (;;) __asm__ volatile("hlt");
-    }
-
-    kernel_module_t *test_mod = (kernel_module_t *)load_module_from_file("/lib/modules/test_module.ko");
-    if (test_mod) {
-        printf("Successfully loaded and initialized test_module.ko!\n", 0x00FF00);
-    } else {
-        printf("Failed to load test_module.ko.\n", 0xFF0000);
-    }
 
     for (;;) __asm__ volatile("hlt");
 }

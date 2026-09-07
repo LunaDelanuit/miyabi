@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "pmm.h"
+#include "../../cmdline.h"
 
 uint64_t hhdm_offset = 0;
 static uint8_t *bitmap = NULL;
@@ -179,5 +180,5 @@ void init_pmm(void) {
         }
     }
 
-    printf("PMM: Succesfully initialized.\n", 0x00FFFF);
+    if (DEBUG) printf("PMM: Succesfully initialized.\n", 0x00FFFF);
 }

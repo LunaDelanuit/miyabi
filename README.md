@@ -67,7 +67,7 @@ Limited to:
 
 * x86_64 Only
 * No APIC
-* Very limited kernel modules
+* Very limited kernel modules (currently broken)
 * Barely usuable (for now)
 
 Does not have:

@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "vmm.h"
 #include "pmm.h"
+#include "../../cmdline.h"
 #include "../../modules/ksym.h"
 
 #define HEAP_START 0xFFFFFFFFC0000000ULL
@@ -42,7 +43,7 @@ static heap_block_t *heap_expand(size_t bytes) {
 
 void init_heap(void) {
     head = heap_expand(HEAP_INITIAL_SIZE);
-    printf("HEAP: Succesfully initialized.\n", 0x00FFFF);
+    if (DEBUG) printf("HEAP: Succesfully initialized.\n", 0x00FFFF);
 }
 
 void *kmalloc(size_t size) {
@@ -75,7 +76,7 @@ void *kmalloc(size_t size) {
 
     size_t needed_bytes = size + sizeof(heap_block_t);
     heap_block_t *new_block = heap_expand(needed_bytes);
-    
+
     if (last != NULL) {
         last->next = new_block;
     } else {

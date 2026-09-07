@@ -3,6 +3,7 @@
 #include "thread.h"
 #include "../../drivers/memory/heap.h"
 #include "../../drivers/fb.h"
+#include "../../cmdline.h"
 
 static thread_t *running_thread = NULL;
 static thread_t *thread_queue_head = NULL;
@@ -14,14 +15,14 @@ static thread_t main_kernel_thread;
 void init_scheduler(void) {
     main_kernel_thread.id = 0;
     main_kernel_thread.state = THREAD_STATE_RUNNING;
-    main_kernel_thread.stack_bottom = NULL; 
+    main_kernel_thread.stack_bottom = NULL;
     main_kernel_thread.rsp = NULL;
     main_kernel_thread.next = NULL;
 
     running_thread = &main_kernel_thread;
     thread_queue_head = &main_kernel_thread;
-    
-    printf("SCHEDULER: Initialized round-robin execution queue.\n", 0x00FFFF);
+
+    if (DEBUG) printf("SCHEDULER: Initialized round-robin execution queue.\n", 0x00FFFF);
 }
 
 thread_t *kthread_create(void (*entry_point)(void)) {
@@ -37,9 +38,9 @@ thread_t *kthread_create(void (*entry_point)(void)) {
     }
 
     thread->id = next_thread_id++;
-    
-    thread->state = THREAD_STATE_READY; 
-    
+
+    thread->state = THREAD_STATE_READY;
+
     thread->stack_bottom = stack_raw;
     thread->next = NULL;
 

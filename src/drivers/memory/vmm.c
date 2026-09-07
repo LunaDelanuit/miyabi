@@ -2,6 +2,7 @@
 
 #include "vmm.h"
 #include "pmm.h"
+#include "../../cmdline.h"
 
 extern uint64_t hhdm_offset;
 
@@ -122,5 +123,5 @@ void init_vmm(void) {
         for (;;) __asm__ volatile ("hlt");
     }
 
-    printf("VMM: Succesfully initialized.\n", 0x00FFFF);
+    if (DEBUG) printf("VMM: Succesfully initialized.\n", 0x00FFFF);
 }
