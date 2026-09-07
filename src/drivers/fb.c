@@ -191,7 +191,7 @@ static void print_num_to_buf(char *buf, int *idx, int val, int base) {
     }
 }
 
-uint64_t fb_vfs_write(vfs_node_t *node, uint64_t offset, uint64_t size, uint8_t *buffer) {
+uint64_t fb_vfs_write(vfs_node_t *node, uint8_t *buffer, uint64_t size, uint64_t offset) {
     (void)node;
     (void)offset;
 
@@ -228,7 +228,7 @@ void printf(const char *fmt, uint32_t color, ...) {
     va_start(args, color);
 
     for (; *fmt; fmt++) {
-        if (buf_idx >= 1023) break; 
+        if (buf_idx >= 1023) break;
 
         if (*fmt != '%') {
             out_buf[buf_idx++] = *fmt;
@@ -267,7 +267,7 @@ void printf(const char *fmt, uint32_t color, ...) {
     out_buf[buf_idx] = '\0';
 
     if (fb_vfs_node && fb_vfs_node->write) {
-        fb_vfs_node->write(fb_vfs_node, 0, buf_idx, (uint8_t*)out_buf);
+        fb_vfs_node->write(fb_vfs_node, (uint8_t*)out_buf, buf_idx, 0);
     } else {
         spin_lock(&fb_lock);
         for (int i = 0; i < buf_idx; i++) {

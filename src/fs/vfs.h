@@ -19,8 +19,8 @@
 
 struct vfs_node;
 
-typedef uint64_t (*read_type_t)(struct vfs_node*, uint64_t, uint64_t, uint8_t*);
-typedef uint64_t (*write_type_t)(struct vfs_node*, uint64_t, uint64_t, uint8_t*);
+typedef uint64_t (*read_type_t)(struct vfs_node*, uint8_t*, uint64_t, uint64_t);
+typedef uint64_t (*write_type_t)(struct vfs_node*, uint8_t*, uint64_t, uint64_t);
 typedef void (*open_type_t)(struct vfs_node*, uint32_t);
 typedef void (*close_type_t)(struct vfs_node*);
 typedef struct vfs_node* (*readdir_type_t)(struct vfs_node*, uint32_t);

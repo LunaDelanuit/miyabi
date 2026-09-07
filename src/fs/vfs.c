@@ -40,6 +40,7 @@ vfs_node_t *vfs_get_node_by_path(const char *path) {
         
         if (current_node->flags & FS_MOUNTPOINT) {
             current_node = current_node->ptr;
+            if (!current_node) return NULL;
         }
         
         if ((current_node->flags & FS_DIRECTORY) == 0) {
@@ -48,6 +49,7 @@ vfs_node_t *vfs_get_node_by_path(const char *path) {
         
         if (current_node->finddir) {
             current_node = current_node->finddir(current_node, token);
+            if (!current_node) return NULL;
         } else {
             return NULL;
         }
@@ -75,9 +77,9 @@ vfs_node_t *vfs_open(const char *path, uint32_t flags) {
 
 uint64_t vfs_read(vfs_node_t *node, uint8_t *buffer, uint64_t size, uint64_t offset) {
     if (node && node->read) {
-        return node->read(node, offset, size, buffer);
+        return node->read(node, buffer, size, offset);
     }
-    
+
     return 0;
 }
 

@@ -15,7 +15,7 @@ but also less complex and tied together than a Monolithic-kernel, allowing theor
 
 ## License
 
-Copyright (C) 2026 Luna Dalenuit and contributers.
+Copyright (C) 2026 Luna Delanuit and contributers.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ Limited to:
 
 * x86_64 Only
 * No APIC
+* Very limited kernel modules
 * Barely usuable (for now)
 
 Does not have:

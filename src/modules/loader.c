@@ -95,10 +95,24 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     Elf64_Shdr *symtab = NULL;
     Elf64_Shdr *strtab = NULL;
 
+    if (symtab->sh_link >= ehdr->e_shnum) {
+        printf("LOADER: Invalid string table index.\n", 0xFF0000);
+        kfree(module_memory);
+        return NULL;
+    }
+
+    strtab = &shdrs[symtab->sh_link];
+
+    if (strtab->sh_type != SHT_STRTAB) {
+        printf("LOADER: Symbol string table is invalid.\n", 0xFF0000);
+        kfree(module_memory);
+        return NULL;
+    }
+
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdrs[i].sh_type == SHT_SYMTAB) {
             symtab = &shdrs[i];
-            strtab = &shdrs[symtab->sh_link]; 
+            strtab = &shdrs[symtab->sh_link];
             break;
         }
     }
@@ -114,8 +128,14 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdrs[i].sh_type != SHT_RELA) continue;
 
-        Elf64_Shdr *target_section = &shdrs[shdrs[i].sh_info]; 
-        
+        Elf64_Shdr *target_section = &shdrs[shdrs[i].sh_info];
+
+        if (shdrs[i].sh_info >= ehdr->e_shnum) {
+            printf("LOADER: Invalid relocation target section.\n", 0xFF0000);
+            kfree(module_memory);
+            return NULL;
+        }
+
         if (!(target_section->sh_flags & SHF_ALLOC)) continue;
 
         Elf64_Rela *relas = (Elf64_Rela *)(file_buffer + shdrs[i].sh_offset);
@@ -123,13 +143,20 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
 
         for (int j = 0; j < num_relas; j++) {
             Elf64_Rela *rela = &relas[j];
-            
+
             int sym_idx = ELF64_R_SYM(rela->r_info);
             int rel_type = ELF64_R_TYPE(rela->r_info);
-            
+            int num_syms = symtab->sh_size / sizeof(Elf64_Sym);
+
+            if (sym_idx >= num_syms) {
+                printf("LOADER: Invalid relocation symbol index.\n", 0xFF0000);
+                kfree(module_memory);
+                return NULL;
+            }
+
             Elf64_Sym *sym = &syms[sym_idx];
             char *sym_name = strings + sym->st_name;
-            
+
             uint64_t sym_val = 0;
 
             if (sym->st_shndx == SHN_UNDEF) {
@@ -141,40 +168,41 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
             } else if (sym->st_shndx == SHN_ABS) {
                 sym_val = sym->st_value;
             } else {
+                if (sym->st_shndx >= ehdr->e_shnum) continue;
                 Elf64_Shdr *sym_sec = &shdrs[sym->st_shndx];
                 sym_val = sym_sec->sh_addr + sym->st_value;
             }
 
             uint64_t patch_addr = target_section->sh_addr + rela->r_offset;
-            
+
             uint64_t *patch_ptr64 = (uint64_t *)patch_addr;
             uint32_t *patch_ptr32 = (uint32_t *)patch_addr;
 
             switch (rel_type) {
                 case R_X86_64_NONE:
                     break;
-                
-                case R_X86_64_64: 
+
+                case R_X86_64_64:
                     *patch_ptr64 = sym_val + rela->r_addend;
                     break;
-                
+
                 case R_X86_64_PC32:
-                case R_X86_64_PLT32: 
+                case R_X86_64_PLT32:
                     *patch_ptr32 = (uint32_t)(sym_val + rela->r_addend - patch_addr);
                     break;
-                
+
                 case R_X86_64_32:
                 case R_X86_64_32S:
                     *patch_ptr32 = (uint32_t)(sym_val + rela->r_addend);
                     break;
-                
+
                 default:
                     printf("LOADER: Unsupported relocation type: %d\n", 0xFF0000, rel_type);
                     return NULL;
             }
         }
     }
-    
+
     printf("LOADER: Relocations processed successfully.\n", 0x00FF00);
 
     kernel_module_t *mod = (kernel_module_t *)kmalloc(sizeof(kernel_module_t));
@@ -193,18 +221,18 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     mod->cleanup = NULL;
 
     int num_total_syms = symtab->sh_size / sizeof(Elf64_Sym);
-    
+
     for (int i = 0; i < num_total_syms; i++) {
         Elf64_Sym *sym = &syms[i];
-        
-        if (sym->st_shndx == SHN_UNDEF || sym->st_shndx == SHN_ABS) continue;
-        
+
+        if (sym->st_shndx == SHN_UNDEF || sym->st_shndx == SHN_ABS || sym->st_shndx >= ehdr->e_shnum) continue;
+
         char *sym_name = strings + sym->st_name;
-        
+
         int is_init = 1, is_cleanup = 1;
         const char *init_str = "module_init";
         const char *clean_str = "module_cleanup";
-        
+
         for (int k = 0; init_str[k] || sym_name[k]; k++) {
             if (init_str[k] != sym_name[k]) { is_init = 0; break; }
         }
@@ -224,10 +252,14 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     if (!mod->init) {
         printf("LOADER: No module_init() found in %s\n", 0xFFFF00, name);
     } else {
-        printf("LOADER: Executing module_init() for %s...\n", 0x00FFCC, name);
-        
-        mod->init(); 
-        
+        printf("LOADER: init pointer = 0x%x\n", 0xFFFFFF, (uint64_t)mod->init);
+
+        printf("LOADER: About to execute module_init()\n", 0xFFFF00);
+
+        mod->init();
+
+        printf("LOADER: Returned from module_init()\n", 0x00FF00);
+
         printf("LOADER: Module %s successfully initialized!\n", 0x00FF00, name);
     }
 
@@ -235,11 +267,21 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
 }
 
 kernel_module_t *load_module_from_file(const char *filepath) {
+    printf("Cannot load module '%s', kernel modules are broken and therefor disabled.\n", 0xFF0000, filepath);
+    return NULL;
+
     printf("Fetching module from %s...\n", 0x00FFFF, filepath);
 
     vfs_node_t *mod_file = vfs_open(filepath, VFS_FLAG_READ);
     if (!mod_file) {
-        printf("Failed to open %s\n", 0xFF0000, filepath);
+        printf("LOADER: File not found: ", 0xFF0000);
+        printf(filepath, 0xFF0000);
+        printf("\n", 0xFF0000);
+        return NULL;
+    }
+
+    if ((mod_file->flags & FS_FILE) == 0) {
+        printf("LOADER: Path is not a file!\n", 0xFF0000);
         return NULL;
     }
 
@@ -248,7 +290,9 @@ kernel_module_t *load_module_from_file(const char *filepath) {
     kernel_module_t *loaded_mod = NULL;
 
     if (file_buffer) {
-        vfs_read(mod_file, file_buffer, file_size, 0);
+        uint64_t file_offset = 0;
+
+        vfs_read(mod_file, file_buffer, file_size, file_offset);
 
         loaded_mod = load_module(filepath, file_buffer);
 

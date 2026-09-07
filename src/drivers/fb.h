@@ -21,6 +21,6 @@ void print_hex64(uint64_t value, uint32_t color);
 void printf(const char *fmt, uint32_t color, ...);
 
 vfs_node_t *fb_create_vfs_node(void);
-uint64_t fb_vfs_write(vfs_node_t *node, uint64_t offset, uint64_t size, uint8_t *buffer);
+uint64_t fb_vfs_write(vfs_node_t *node, uint8_t *buffer, uint64_t size, uint64_t offset);
 
 #endif
