@@ -98,23 +98,36 @@ void _start(void) {
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
     uint64_t code_phys = (uint64_t)pmm_alloc();
-    uint64_t stack_phys = (uint64_t)pmm_alloc();
+        uint64_t stack_phys = (uint64_t)pmm_alloc();
 
-    uint8_t *code = (uint8_t *)phys_to_virt(code_phys);
-    int i = 0;
+        uint8_t *code = (uint8_t *)phys_to_virt(code_phys);
+        int i = 0;
 
-    /*
-     * mov rax, 2 ; syscall write
-     * int 0x80
-     * mov rax, 0 ; syscall exit
-     * int 0x80
-     * jmp $
-     */
-    code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x02; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-    code[i++] = 0xCD; code[i++] = 0x80;
-    code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-    code[i++] = 0xCD; code[i++] = 0x80;
-    code[i++] = 0xEB; code[i++] = 0xFE;
+        /*
+         * mov rax, 2 ; syscall write
+         * mov rdi, 1 ; stdout
+         * mov rsi, 0x400030 ; string buffer
+         * mov rdx, 15 ; length
+         * int 0x80
+         * mov rax, 0 ; syscall exit
+         * mov rdi, 0 ; exit code 0
+         * int 0x80
+         * jmp $
+         */
+        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x02; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC7; code[i++] = 0x01; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC6; code[i++] = 0x30; code[i++] = 0x00; code[i++] = 0x40; code[i++] = 0x00;
+        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC2; code[i++] = 0x0F; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+        code[i++] = 0xCD; code[i++] = 0x80;
+        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC7; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+        code[i++] = 0xCD; code[i++] = 0x80;
+        code[i++] = 0xEB; code[i++] = 0xFE;
+
+        const char *msg = "Hello, Miyabi!\n";
+        for (int j = 0; j < 15; j++) {
+            code[i++] = msg[j];
+        }
 
     uint64_t user_pml4_phys = vmm_create_user_pml4();
     vmm_switch_pml4(user_pml4_phys);
