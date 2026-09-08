@@ -6,7 +6,7 @@ switch_to_user_space:
     cli
 
     mov ax, 0x1B
-    mov dx, ax
+    mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax

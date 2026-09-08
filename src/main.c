@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include <stdint.h>
 #if defined(__x86_64__)
     #include "arch/x86_64/gdt.h"
     #include "arch/x86_64/idt.h"
@@ -22,6 +23,8 @@
 #include "fs/vfs.h"
 #include "fs/devfs.h"
 #include "fs/initramfs.h"
+
+#include "elf/loader.h"
 
 extern void switch_to_user_space(uint64_t user_stack, uint64_t user_func);
 
@@ -97,48 +100,48 @@ void _start(void) {
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
-    uint64_t code_phys = (uint64_t)pmm_alloc();
-        uint64_t stack_phys = (uint64_t)pmm_alloc();
+   vfs_node_t *test_node = vfs_open("/test", VFS_FLAG_READ);
+   if (!test_node) {
+       printf("/test does not exist.", 0xFF0000);
+       for (;;) __asm__ volatile("hlt");
+   }
 
-        uint8_t *code = (uint8_t *)phys_to_virt(code_phys);
-        int i = 0;
+   uint64_t file_size = test_node->length;
+   uint8_t *elf_buffer = (uint8_t *)kmalloc(file_size);
 
-        /*
-         * mov rax, 2 ; syscall write
-         * mov rdi, 1 ; stdout
-         * mov rsi, 0x400030 ; string buffer
-         * mov rdx, 15 ; length
-         * int 0x80
-         * mov rax, 0 ; syscall exit
-         * mov rdi, 0 ; exit code 0
-         * int 0x80
-         * jmp $
-         */
-        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x02; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC7; code[i++] = 0x01; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC6; code[i++] = 0x30; code[i++] = 0x00; code[i++] = 0x40; code[i++] = 0x00;
-        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC2; code[i++] = 0x0F; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-        code[i++] = 0xCD; code[i++] = 0x80;
-        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-        code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC7; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
-        code[i++] = 0xCD; code[i++] = 0x80;
-        code[i++] = 0xEB; code[i++] = 0xFE;
-
-        const char *msg = "Hello, Miyabi!\n";
-        for (int j = 0; j < 15; j++) {
-            code[i++] = msg[j];
-        }
+   vfs_read(test_node, elf_buffer, file_size, 0);
+   vfs_close(test_node);
 
     uint64_t user_pml4_phys = vmm_create_user_pml4();
+    if (!user_pml4_phys) {
+        printf("Failed to create user address space.\n", 0xFF0000);
+        for (;;) __asm__ volatile("hlt");
+    }
+
+    uint64_t kernel_pml4_phys;
+    __asm__ volatile("mov %%cr3, %0" : "=r"(kernel_pml4_phys));
+
     vmm_switch_pml4(user_pml4_phys);
 
-    uint64_t flags = PTE_PRESENT | PTE_WRITE | PTE_USER;
-    vmm_map_page(0x400000, code_phys, flags);
-    vmm_map_page(0x500000, stack_phys, flags);
+    uint64_t entry_point = elf_load(elf_buffer, user_pml4_phys);
 
-    uint64_t stack_top = 0x500000 + 4096;
-    if (DEBUG) printf("Entering user space...\n", 0xAAAAFF);
-    switch_to_user_space(stack_top, 0x400000);
+    if (entry_point) {
+        uint64_t stack_phys = (uint64_t)pmm_alloc();
+        uint64_t user_stack_virtual = 0x7FFFFFFF0000;
+
+        vmm_map_page(user_stack_virtual, stack_phys, PTE_PRESENT | PTE_USER | PTE_WRITE);
+
+        uint8_t *stack_virt = (uint8_t *)phys_to_virt(stack_phys);
+        for (int i = 0; i < 4096; i++) stack_virt[i] = 0;
+
+        vmm_switch_pml4(kernel_pml4_phys);
+
+        if (DEBUG) printf("Entering user space...\n", 0xAAAAFF);
+
+        /* The iretq frame below executes at a user virtual address. */
+        vmm_switch_pml4(user_pml4_phys);
+        switch_to_user_space(user_stack_virtual + 3072, entry_point);
+    }
 
     for (;;) __asm__ volatile("hlt");
 }

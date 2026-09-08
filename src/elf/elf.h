@@ -130,4 +130,28 @@ typedef struct {
 #define R_X86_64_32        10 // Direct 32 bit zero extended
 #define R_X86_64_32S       11 // Direct 32 bit sign extended
 
+#define PT_NULL    0
+#define PT_LOAD    1
+#define PT_DYNAMIC 2
+#define PT_INTERP  3
+#define PT_NOTE    4
+#define PT_SHLIB   5
+#define PT_PHDR    6
+#define PT_TLS     7
+
+#define PF_X       0x1 // Execute
+#define PF_W       0x2 // Write
+#define PF_R       0x4 // Read
+
+typedef struct {
+    Elf64_Word   p_type;
+    Elf64_Word   p_flags;
+    Elf64_Off    p_offset;
+    Elf64_Addr   p_vaddr;
+    Elf64_Addr   p_paddr;
+    Elf64_Xword  p_filesz;
+    Elf64_Xword  p_memsz;
+    Elf64_Xword  p_align;
+} Elf64_Phdr;
+
 #endif
