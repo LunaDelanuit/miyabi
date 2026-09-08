@@ -23,6 +23,8 @@
 #include "fs/devfs.h"
 #include "fs/initramfs.h"
 
+extern void switch_to_user_space(uint64_t user_stack, uint64_t user_func);
+
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST_ID,
@@ -94,6 +96,36 @@ void _start(void) {
     printf("0.1\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
+
+    uint64_t code_phys = (uint64_t)pmm_alloc();
+    uint64_t stack_phys = (uint64_t)pmm_alloc();
+
+    uint8_t *code = (uint8_t *)phys_to_virt(code_phys);
+    int i = 0;
+
+    /*
+     * mov rax, 2 ; syscall write
+     * int 0x80
+     * mov rax, 0 ; syscall exit
+     * int 0x80
+     * jmp $
+     */
+    code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x02; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+    code[i++] = 0xCD; code[i++] = 0x80;
+    code[i++] = 0x48; code[i++] = 0xC7; code[i++] = 0xC0; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00; code[i++] = 0x00;
+    code[i++] = 0xCD; code[i++] = 0x80;
+    code[i++] = 0xEB; code[i++] = 0xFE;
+
+    uint64_t user_pml4_phys = vmm_create_user_pml4();
+    vmm_switch_pml4(user_pml4_phys);
+
+    uint64_t flags = PTE_PRESENT | PTE_WRITE | PTE_USER;
+    vmm_map_page(0x400000, code_phys, flags);
+    vmm_map_page(0x500000, stack_phys, flags);
+
+    uint64_t stack_top = 0x500000 + 4096;
+    if (DEBUG) printf("Entering user space...\n", 0xAAAAFF);
+    switch_to_user_space(stack_top, 0x400000);
 
     for (;;) __asm__ volatile("hlt");
 }

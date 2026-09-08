@@ -6,12 +6,14 @@ global isr0
 global isr8
 global isr13
 global isr14
+global isr128
 
 global irq0
 global irq1
 
 extern exception_handler
 extern irq_handler
+extern syscall_handler
 
 section .text
 
@@ -106,6 +108,18 @@ irq1:
 
     mov rdi, rsp
     call irq_handler
+
+    POP_REGS
+    add rsp, 16
+    iretq
+
+isr128:
+    push 0
+    push 128
+    PUSH_REGS
+
+    mov rdi, rsp
+    call syscall_handler
 
     POP_REGS
     add rsp, 16

@@ -83,7 +83,7 @@ $(ISO): $(ISO_DIR)
 	$(LIMINE_BIN) bios-install $(ISO)
 
 run: $(ISO)
-	qemu-system-x86_64 -d int,cpu_reset -D qemu.log -no-reboot \
+	qemu-system-x86_64 -d int,cpu_reset -D qemu.log \
 	-drive if=pflash,format=raw,unit=0,file=/usr/share/ovmf/x64/OVMF.4m.fd,readonly=on \
 	-cdrom $(ISO)
 

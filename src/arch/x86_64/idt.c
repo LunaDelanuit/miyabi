@@ -5,6 +5,7 @@
 
 #define IDT_ENTRIES 256
 #define IDT_INTERRUPT_GATE 0x8E
+#define IDT_USER_INTERUPT_GATE 0xEE
 
 #define IRQ_BASE 32
 
@@ -15,6 +16,7 @@ extern void isr0(void);
 extern void isr13(void);
 extern void isr14(void);
 extern void isr8(void);
+extern void isr128(void);
 
 extern void irq0(void);
 extern void irq1(void);
@@ -43,6 +45,8 @@ void init_idt(void) {
 
     idt_set_gate(IRQ_BASE + 0, irq0, IDT_INTERRUPT_GATE);
     idt_set_gate(IRQ_BASE + 1, irq1, IDT_INTERRUPT_GATE);
+
+    idt_set_gate(0x80, isr128, IDT_USER_INTERUPT_GATE);
 
     idtr.limit = sizeof(idt) - 1;
     idtr.base = (uint64_t)&idt;

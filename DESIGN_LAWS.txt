@@ -1,0 +1,445 @@
+THE LAWS OF ELEGANCE
+====================
+(A private friend wrote this for me)
+(A summary is provided at line 338 for those who don't want to read the entire thing)
+
+Law I - Every subsystem must communicate through a defined interface.
+
+Description:
+Subsystems should interact through explicit contracts rather than depending
+on each other's internal implementation details.
+
+Example:
+A filesystem talks to a block-device interface rather than directly calling
+AHCI-specific functions.
+
+    filesystem
+        ↓
+    block device interface
+        ↓
+    AHCI driver
+
+
+Law II - The kernel provides mechanisms; userspace provides policy.
+
+Description:
+The kernel should provide fundamental capabilities while allowing userspace
+to decide how those capabilities are used.
+
+Example:
+The kernel provides process creation and execution. An init system decides
+which processes should be started during boot.
+
+
+Law III - One concept should have one fundamental representation.
+
+Description:
+Avoid creating multiple unrelated mechanisms for fundamentally the same
+concept.
+
+Example:
+Files, pipes, terminals, and devices can all be represented through file
+descriptors rather than each having a completely separate access model.
+
+
+Law IV - Prefer combining existing primitives over adding special-purpose mechanisms.
+
+Description:
+When a new feature can be constructed from existing primitives, prefer
+composition over adding another kernel mechanism.
+
+Example:
+Instead of adding a special kernel API for a userspace service manager,
+combine processes, signals, files, and IPC to implement it in userspace.
+
+
+Law V - The kernel must know as little as reasonably possible about userspace.
+
+Description:
+The kernel should provide general-purpose primitives without knowing about
+specific applications, shells, desktop environments, or services.
+
+Example:
+The kernel knows that process 42 exists and has a set of file descriptors.
+It does not know that process 42 happens to be a text editor.
+
+
+Law VI - Every layer owns a problem, and no layer should solve another layer's problem.
+
+Description:
+Each architectural layer should have a clear responsibility and should
+not leak unrelated responsibilities into neighboring layers.
+
+Example:
+An AHCI driver handles the controller. The filesystem handles filesystem
+semantics. Neither should implement the other's responsibilities.
+
+
+Law VII - Code should have exactly the authority it needs, and no more.
+
+Description:
+Privileged operations should be restricted to the components that actually
+require them.
+
+Example:
+A text editor runs entirely in userspace and does not need kernel privilege
+just to edit a file.
+
+
+Law VIII - Equivalent operations must report failure consistently.
+
+Description:
+Similar operations should follow the same error-reporting conventions so
+programs do not need to learn a different error model for every subsystem.
+
+Example:
+A failed POSIX-style operation returns -1 and sets errno rather than each
+subsystem inventing its own incompatible failure convention.
+
+
+Law IX - An operation should behave predictably regardless of who invokes it.
+
+Description:
+Permissions may change whether an operation is allowed, but they should not
+arbitrarily change what the operation means.
+
+Example:
+read() means reading data whether it is called by root or an ordinary user.
+The difference is whether the caller is permitted to access the object.
+
+
+Law X - Human-readable state should be represented as human-readable text whenever practical.
+
+Description:
+Configuration and observable system information should remain inspectable
+without requiring specialized proprietary tools.
+
+Example:
+
+    /etc/hostname
+    /etc/fstab
+    /proc/meminfo
+
+can be inspected with ordinary text-processing utilities.
+
+
+Law XI - Independent concepts should remain independent.
+
+Description:
+Subsystems that do not fundamentally depend on one another should not become
+coupled merely for convenience.
+
+Example:
+The scheduler should not need to know how a filesystem stores files.
+
+
+Law XII - An abstraction must exist because it solves a real conceptual problem.
+
+Description:
+Do not create abstractions simply because code has become inconvenient to
+organize.
+
+Example:
+Do not create a "DeviceManagerManager" unless it represents an actual
+architectural concept with a meaningful responsibility.
+
+
+Law XIII - Internal implementations may change; interfaces should change only deliberately.
+
+Description:
+Subsystem implementations should be replaceable without forcing unrelated
+subsystems to change.
+
+Example:
+An ext2 filesystem should work with AHCI, NVMe, or another block device
+without knowing which storage technology is underneath it.
+
+
+Law XIV - Special cases require exceptional justification.
+
+Description:
+Special-case behavior should be avoided when a general abstraction can
+solve the problem cleanly.
+
+Example:
+If every filesystem needs an exception in the VFS, reconsider the VFS
+interface instead of accumulating filesystem-specific special cases.
+
+
+Law XV - Fundamental operations should be simple enough to understand independently.
+
+Description:
+Primitive operations should have small, precise semantics. Complex behavior
+should emerge from combining primitives.
+
+Example:
+open(), read(), write(), close(), fork(), exec(), and wait() should each
+have clearly defined responsibilities rather than becoming enormous
+multi-purpose operations.
+
+
+Law XVI - An operation should not secretly perform substantial unrelated work.
+
+Description:
+Operations should not hide major side effects or unrelated system activity
+behind an innocent interface.
+
+Example:
+read() may legitimately interact with caches and storage, but it should not
+silently start processes or modify unrelated system configuration.
+
+
+Law XVII - Important system state should have a principled way to be observed.
+
+Description:
+If the kernel maintains important state, administrators and programs should
+have a defined interface through which that state can be inspected.
+
+Example:
+
+    /proc/<pid>/status
+    /proc/meminfo
+    /sys/...
+
+provide structured views of kernel state rather than relying on debug prints.
+
+
+Law XVIII - The kernel should be difficult to extend accidentally; userspace should be easy to extend deliberately.
+
+Description:
+New functionality should generally be implementable in userspace when it
+does not require kernel privilege.
+
+Example:
+Adding a new service should normally involve installing a userspace program
+and configuration rather than modifying the kernel.
+
+
+Law XIX - Compatibility belongs at interfaces, not everywhere.
+
+Description:
+Compatibility layers should isolate compatibility concerns instead of
+spreading them throughout the kernel.
+
+Example:
+
+    application
+        ↓
+    POSIX libc
+        ↓
+    kernel ABI
+        ↓
+    kernel
+
+The kernel does not need to make every internal subsystem directly
+POSIX-aware.
+
+
+Law XX - Names and interfaces must accurately describe what they do.
+
+Description:
+An interface's name and semantics should correspond to the concept it
+represents.
+
+Example:
+A function named read() should fundamentally read data. It should not
+unexpectedly perform unrelated operations as a side effect.
+
+
+Law XXI - The default behavior should be the unsurprising behavior.
+
+Description:
+When multiple valid behaviors are possible, choose the default that requires
+the fewest assumptions from the user or programmer.
+
+Example:
+A newly created file should have predictable permissions and semantics rather
+than inheriting obscure behavior from unrelated system state.
+
+
+Law XXII - Complexity is allowed when necessary, but it must be visible and justified.
+
+Description:
+The goal is not to pretend that difficult problems are simple. Necessary
+complexity should exist behind clear boundaries and have a reason to exist.
+
+Example:
+SMP, virtual memory, PCI, ACPI, networking, and filesystems are inherently
+complex. That complexity should be isolated inside well-defined subsystems.
+
+
+Law XXIII - If something happens, there must be a comprehensible reason why.
+
+Description:
+The system should avoid hidden mechanisms and unexplained behavior. Important
+actions should be traceable through the architecture.
+
+Example:
+
+    application
+        ↓
+    libc
+        ↓
+    syscall
+        ↓
+    kernel subsystem
+        ↓
+    driver
+        ↓
+    hardware
+
+Each transition should have a clear explanation.
+
+
+Law XXIV - When convenience and architectural integrity conflict, prefer architectural integrity.
+
+Description:
+The system should not sacrifice a coherent architecture merely to make one
+particular task slightly easier.
+
+Example:
+Do not add a special kernel API just because it makes one application
+simpler if the same functionality can be cleanly constructed from existing
+primitives.
+
+
+META-LAW - Every part of the system must fit naturally with the rest of the system.
+
+Description:
+The entire architecture should remain coherent. If a proposed feature
+requires numerous exceptions to existing laws, reconsider either the feature
+or the architecture itself.
+
+Example:
+If adding one feature requires special cases in the scheduler, VFS, memory
+manager, syscall layer, and drivers, the feature probably does not belong
+there in its current form.
+
+
+CORE PRINCIPLE
+==============
+
+Prefer a small number of powerful, well-defined primitives that compose
+cleanly over a large number of convenient, special-purpose mechanisms.
+
+The goal is not minimum code.
+The goal is not maximum convenience.
+The goal is not simplicity at any cost.
+
+The goal is COHERENCE.
+
+Complexity should exist only where the problem itself demands it.
+Every abstraction should have a reason.
+Every interface should have a clear contract.
+Every subsystem should have a defined responsibility.
+And the whole system should feel like it was designed as one system.
+
+
+
+SUMMARY
+=======
+
+Build Miyabi around a small set of powerful, well-defined primitives.
+
+1. Explicit Interfaces
+   Subsystems communicate through clear contracts, never hidden internals.
+
+2. Mechanism over Policy
+   The kernel provides capabilities; userspace decides how to use them.
+
+3. One Abstraction
+   One fundamental concept should have one fundamental representation.
+
+4. Composition
+   Prefer combining existing primitives over creating special-purpose
+   mechanisms.
+
+5. Kernel Ignorance
+   The kernel should know as little as possible about specific applications.
+
+6. Layered Responsibility
+   Each layer owns its problem and stays out of other layers' problems.
+
+7. Minimal Privilege
+   Code should have only the authority it actually needs.
+
+8. Uniform Failure
+   Similar operations should fail and report errors consistently.
+
+9. Predictability
+   Operations should behave consistently and unsurprisingly.
+
+10. Textual Transparency
+    Important configuration and system state should be human-readable
+    whenever practical.
+
+11. Orthogonality
+    Independent concepts should remain independent.
+
+12. No Accidental Abstractions
+    Every abstraction must solve a real conceptual problem.
+
+13. Stable Contracts
+    Implementations may change without unnecessarily breaking interfaces.
+
+14. No Special Cases
+    Prefer general abstractions over accumulating exceptions.
+
+15. Small Primitives
+    Fundamental operations should be simple, precise, and composable.
+
+16. No Hidden Work
+    Operations should not secretly perform substantial unrelated work.
+
+17. Observable State
+    Important system state should have a principled way to inspect it.
+
+18. User-Space Extensibility
+    New functionality should live in userspace whenever kernel privilege
+    isn't actually required.
+
+19. Compatibility at the Boundary
+    POSIX and other compatibility concerns should be isolated at interfaces.
+
+20. Semantic Honesty
+    Names and interfaces must accurately describe their behavior.
+
+21. Boring Defaults
+    Defaults should be predictable and unsurprising.
+
+22. Explicit Complexity
+    Necessary complexity is acceptable, but it must be isolated and justified.
+
+23. No Magic
+    If something happens, there should be a comprehensible reason why.
+
+24. Elegance over Convenience
+    When convenience conflicts with architectural integrity, choose integrity.
+
+
+META-LAW
+========
+
+Everything must fit together coherently.
+
+If a feature requires many exceptions, special cases, hidden mechanisms, or
+architectural compromises, reconsider the feature or the architecture.
+
+
+IN ONE SENTENCE
+===============
+
+A small, coherent system of explicit, composable primitives should be
+preferred over a large collection of convenient, special-purpose mechanisms.
+
+
+THE GOAL
+========
+
+Not the smallest OS.
+Not the easiest OS.
+Not the most feature-rich OS.
+
+A system where every part has a reason to exist,
+every interface has a clear meaning,
+and the whole architecture feels like one deliberate design.

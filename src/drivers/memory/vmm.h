@@ -20,7 +20,20 @@
 #define PTE_GLOBAL   (1ULL << 8)
 #define PTE_NX       (1ULL << 63)
 
+extern uint64_t hhdm_offset;
+
+static inline uint64_t *phys_to_virt(uint64_t phys) {
+    return (uint64_t *)(phys + hhdm_offset);
+}
+
+static inline void set_cr3(uint64_t val) {
+    __asm__ volatile ("mov %0, %%cr3" :: "r"(val));
+}
+
 void init_vmm(void);
+
+uint64_t vmm_create_user_pml4(void);
+void vmm_switch_pml4(uint64_t pml4_phys);
 
 void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags);
 void vmm_unmap_page(uint64_t virt);
