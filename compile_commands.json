@@ -1,0 +1,29 @@
+[
+  {
+    "file": "src/syscalls/syscalls.c",
+    "arguments": [
+      "/usr/bin/gcc",
+      "-ffreestanding",
+      "-fno-stack-protector",
+      "-fno-pic",
+      "-m64",
+      "-mcmodel=kernel",
+      "-mno-red-zone",
+      "-mno-sse",
+      "-mno-sse2",
+      "-mno-mmx",
+      "-mno-80387",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Isrc",
+      "-Isrc/limine/include",
+      "-c",
+      "src/syscalls/syscalls.c",
+      "-o",
+      "build/syscalls/syscalls.o"
+    ],
+    "directory": "/home/luna/Projects/$OS/miyabi",
+    "output": "build/syscalls/syscalls.o"
+  }
+]

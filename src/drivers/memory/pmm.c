@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "pmm.h"
-#include "../../cmdline.h"
+#include "cmdline.h"
 
 uint64_t hhdm_offset = 0;
 static uint8_t *bitmap = NULL;

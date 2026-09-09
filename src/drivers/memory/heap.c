@@ -3,8 +3,8 @@
 #include "heap.h"
 #include "vmm.h"
 #include "pmm.h"
-#include "../../cmdline.h"
-#include "../../modules/ksym.h"
+#include "cmdline.h"
+#include "modules/ksym.h"
 
 #define HEAP_START 0xFFFFFFFFC0000000ULL
 #define HEAP_INITIAL_SIZE (16 * 1024 * 1024ULL)

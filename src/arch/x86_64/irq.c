@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "exceptions.h"
-#include "../../drivers/fb.h"
+#include "drivers/fb.h"
 #include "pic.h"
 #include "keyboard.h"
 #include "thread.h"
@@ -11,10 +11,10 @@ void irq_handler(interrupt_frame_t *frame) {
     if (frame->vector == 32) { // Timer
         ticks++;
 
-        pic_send_eoi(0); 
+        pic_send_eoi(0);
 
         schedule();
-        
+
         return;
     }
 
@@ -23,6 +23,6 @@ void irq_handler(interrupt_frame_t *frame) {
         pic_send_eoi(1);
         return;
     }
-    
+
     printf("UNHANDLED IRQ VECTOR: %d\n", 0xFF0000, frame->vector);
 }

@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include "keyboard.h"
-#include "../../drivers/fb.h"
+#include "drivers/fb.h"
 
 static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
@@ -29,7 +29,7 @@ void keyboard_handler_main(void) {
 
     if (scancode < sizeof(scancode_to_ascii)) {
         char c = scancode_to_ascii[scancode];
-        
+
         if (c != 0) {
             printf("%c", 0xFFFFFF, c);
         }

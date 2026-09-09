@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "exceptions.h"
-#include "../../drivers/fb.h"
+#include "drivers/fb.h"
 
 static const char *exception_name(uint64_t vector) {
     switch (vector) {
@@ -57,6 +57,10 @@ void exception_handler(interrupt_frame_t *frame) {
 
     printf("Vector: ", 0xFF0000);
     print_hex64(frame->vector, 0xFF0000);
+    printf("\n", 0xFF0000);
+
+    printf("RIP: ", 0xFF0000);
+    print_hex64(frame->rip, 0xFF0000);
     printf("\n", 0xFF0000);
 
     printf("Error Code: ", 0xFF0000);

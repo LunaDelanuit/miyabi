@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "idt.h"
-#include "../../drivers/fb.h"
+#include "drivers/fb.h"
 
 #define IDT_ENTRIES 256
 #define IDT_INTERRUPT_GATE 0x8E

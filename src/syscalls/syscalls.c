@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <stdint.h>
-#include "../cmdline.h"
-#include "../drivers/fb.h"
-#include "../fs/vfs.h"
+#include "cmdline.h"
+#include "drivers/fb.h"
 
 struct interrupt_frame {
     uint64_t rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9, r10, r11, r12, r13, r14, r15;

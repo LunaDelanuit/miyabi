@@ -68,16 +68,15 @@ Limited to:
 * x86_64 Only
 * No APIC
 * Very limited kernel modules
+* 3 interrupt-based system calls.
 * Barely usuable (for now)
 
 > [!CAUTION]
-> Kernel modules are currently broken. You can enable them using the boot option `--ENABLE_KERMO`.  
-> Be cautious as it can crash Miyabi.
+> Kernel modules are very experimental, and prone to crashing.
 
 Does not have:
 
 * Multi-architectural support
 * Filesystems (tho we have an initramfs)
 * Process Switching
-* System Calls
 * Everything else

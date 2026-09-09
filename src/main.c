@@ -103,7 +103,9 @@ void _start(void) {
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
-    kernel_module_t *test_mod = (kernel_module_t *)load_module_from_file("/lib/modules/test_module.ko");
+    for (size_t i = 0; i < boot_module_count(); i++) {
+        load_module_from_file(boot_module_path(i));
+    }
 
     vfs_node_t *test_node = vfs_open("/test", VFS_FLAG_READ);
     if (!test_node) {

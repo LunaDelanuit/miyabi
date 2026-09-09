@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "thread.h"
-#include "../../drivers/memory/heap.h"
-#include "../../drivers/fb.h"
-#include "../../cmdline.h"
+#include "drivers/memory/heap.h"
+#include "drivers/fb.h"
+#include "cmdline.h"
 
 static thread_t *running_thread = NULL;
 static thread_t *thread_queue_head = NULL;

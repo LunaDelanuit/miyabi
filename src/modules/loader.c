@@ -2,13 +2,18 @@
 
 #include "ksym.h"
 #include "loader.h"
-#include "../elf/elf.h"
-#include "../drivers/fb.h"
-#include "../drivers/memory/heap.h"
-#include "../fs/vfs.h"
-#include "../cmdline.h"
+#include "elf/elf.h"
+#include "drivers/fb.h"
+#include "drivers/memory/heap.h"
+#include "fs/vfs.h"
+#include "cmdline.h"
 
-static int elf_validate(Elf64_Ehdr *ehdr) {
+static int elf_validate(Elf64_Ehdr *ehdr, size_t file_size) {
+    if (file_size < sizeof(Elf64_Ehdr)) {
+        printf("LOADER: Module is too small for an ELF header.\n", 0xFF0000);
+        return 0;
+    }
+
     if (ehdr->e_ident[EI_MAG0] != ELFMAG0 ||
         ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
         ehdr->e_ident[EI_MAG2] != ELFMAG2 ||
@@ -32,26 +37,41 @@ static int elf_validate(Elf64_Ehdr *ehdr) {
         return 0;
     }
 
+    if (ehdr->e_shentsize != sizeof(Elf64_Shdr) ||
+        ehdr->e_shoff > file_size ||
+        ehdr->e_shnum > (file_size - ehdr->e_shoff) / sizeof(Elf64_Shdr)) {
+        printf("LOADER: Invalid section header table.\n", 0xFF0000);
+        return 0;
+    }
+
     return 1;
 }
 
-kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
+kernel_module_t *load_module(const char *name, uint8_t *file_buffer, size_t file_size) {
+    if (!name || !file_buffer) return NULL;
+
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)file_buffer;
 
     printf("LOADER: Loading module: %s\n", 0x00FFCC, name);
 
-    if (!elf_validate(ehdr)) {
+    if (!elf_validate(ehdr, file_size)) {
         printf("LOADER: Failed to validate %s\n", 0xFF0000, name);
         return NULL;
     }
 
-    printf("LOADER: %s is a valid x86_64 relocatable ELF.\n", 0x00FF00, name);
+    if (DEBUG) printf("LOADER: %s is a valid x86_64 relocatable ELF.\n", 0x00FF00, name);
 
     Elf64_Shdr *shdrs = (Elf64_Shdr *)(file_buffer + ehdr->e_shoff);
     size_t total_memory_size = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdrs[i].sh_flags & SHF_ALLOC) {
+            if (shdrs[i].sh_type != SHT_NOBITS &&
+                (shdrs[i].sh_offset > file_size ||
+                 shdrs[i].sh_size > file_size - shdrs[i].sh_offset)) {
+                if (DEBUG) printf("LOADER: Invalid allocatable section.\n", 0xFF0000);
+                return NULL;
+            }
             if (shdrs[i].sh_addralign > 1) {
                 total_memory_size = (total_memory_size + shdrs[i].sh_addralign - 1) & ~(shdrs[i].sh_addralign - 1);
             }
@@ -65,7 +85,7 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
         return NULL;
     }
 
-    printf("LOADER: Allocated %d bytes at 0x%x for module.\n", 0x00FF00, total_memory_size, (uint64_t)module_memory);
+    if (DEBUG) printf("LOADER: Allocated %d bytes at 0x%x for module.\n", 0x00FF00, total_memory_size, (uint64_t)module_memory);
 
     size_t current_offset = 0;
     for (int i = 0; i < ehdr->e_shnum; i++) {
@@ -96,30 +116,33 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     Elf64_Shdr *symtab = NULL;
     Elf64_Shdr *strtab = NULL;
 
-    if (symtab->sh_link >= ehdr->e_shnum) {
-        printf("LOADER: Invalid string table index.\n", 0xFF0000);
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdrs[i].sh_type == SHT_SYMTAB) {
+            symtab = &shdrs[i];
+            break;
+        }
+    }
+
+    if (!symtab) {
+        printf("LOADER: No symbol table found in module.\n", 0xFF0000);
+        kfree(module_memory);
+        return NULL;
+    }
+
+    if (symtab->sh_link >= ehdr->e_shnum ||
+        symtab->sh_offset > file_size ||
+        symtab->sh_size > file_size - symtab->sh_offset) {
+        printf("LOADER: Invalid symbol table.\n", 0xFF0000);
         kfree(module_memory);
         return NULL;
     }
 
     strtab = &shdrs[symtab->sh_link];
-
-    if (strtab->sh_type != SHT_STRTAB) {
+    if (strtab->sh_type != SHT_STRTAB ||
+        strtab->sh_offset > file_size ||
+        strtab->sh_size > file_size - strtab->sh_offset) {
         printf("LOADER: Symbol string table is invalid.\n", 0xFF0000);
         kfree(module_memory);
-        return NULL;
-    }
-
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdrs[i].sh_type == SHT_SYMTAB) {
-            symtab = &shdrs[i];
-            strtab = &shdrs[symtab->sh_link];
-            break;
-        }
-    }
-
-    if (!symtab || !strtab) {
-        printf("LOADER: No symbol table found in module.\n", 0xFF0000);
         return NULL;
     }
 
@@ -129,13 +152,16 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     for (int i = 0; i < ehdr->e_shnum; i++) {
         if (shdrs[i].sh_type != SHT_RELA) continue;
 
-        Elf64_Shdr *target_section = &shdrs[shdrs[i].sh_info];
-
-        if (shdrs[i].sh_info >= ehdr->e_shnum) {
+        if (shdrs[i].sh_info >= ehdr->e_shnum ||
+            shdrs[i].sh_offset > file_size ||
+            shdrs[i].sh_size > file_size - shdrs[i].sh_offset ||
+            shdrs[i].sh_size % sizeof(Elf64_Rela) != 0) {
             printf("LOADER: Invalid relocation target section.\n", 0xFF0000);
             kfree(module_memory);
             return NULL;
         }
+
+        Elf64_Shdr *target_section = &shdrs[shdrs[i].sh_info];
 
         if (!(target_section->sh_flags & SHF_ALLOC)) continue;
 
@@ -156,6 +182,11 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
             }
 
             Elf64_Sym *sym = &syms[sym_idx];
+            if (sym->st_name >= strtab->sh_size) {
+                printf("LOADER: Invalid symbol name.\n", 0xFF0000);
+                kfree(module_memory);
+                return NULL;
+            }
             char *sym_name = strings + sym->st_name;
 
             uint64_t sym_val = 0;
@@ -164,17 +195,32 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
                 sym_val = ksym_lookup(sym_name);
                 if (!sym_val) {
                     printf("LOADER: Unresolved external symbol: %s\n", 0xFF0000, sym_name);
+                    kfree(module_memory);
                     return NULL;
                 }
             } else if (sym->st_shndx == SHN_ABS) {
                 sym_val = sym->st_value;
             } else {
-                if (sym->st_shndx >= ehdr->e_shnum) continue;
+                if (sym->st_shndx >= ehdr->e_shnum ||
+                    !(shdrs[sym->st_shndx].sh_flags & SHF_ALLOC)) {
+                    printf("LOADER: Invalid defined symbol.\n", 0xFF0000);
+                    kfree(module_memory);
+                    return NULL;
+                }
                 Elf64_Shdr *sym_sec = &shdrs[sym->st_shndx];
                 sym_val = sym_sec->sh_addr + sym->st_value;
             }
 
             uint64_t patch_addr = target_section->sh_addr + rela->r_offset;
+
+            size_t patch_size = rel_type == R_X86_64_64 ? sizeof(uint64_t) : sizeof(uint32_t);
+            if (rel_type != R_X86_64_NONE &&
+                (rela->r_offset > target_section->sh_size ||
+                 patch_size > target_section->sh_size - rela->r_offset)) {
+                printf("LOADER: Relocation is outside its target section.\n", 0xFF0000);
+                kfree(module_memory);
+                return NULL;
+            }
 
             uint64_t *patch_ptr64 = (uint64_t *)patch_addr;
             uint32_t *patch_ptr32 = (uint32_t *)patch_addr;
@@ -199,16 +245,18 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
 
                 default:
                     printf("LOADER: Unsupported relocation type: %d\n", 0xFF0000, rel_type);
+                    kfree(module_memory);
                     return NULL;
             }
         }
     }
 
-    printf("LOADER: Relocations processed successfully.\n", 0x00FF00);
+    if (DEBUG) printf("LOADER: Relocations processed successfully.\n", 0x00FF00);
 
     kernel_module_t *mod = (kernel_module_t *)kmalloc(sizeof(kernel_module_t));
     if (!mod) {
         printf("LOADER: Failed to allocate kernel_module_t.\n", 0xFF0000);
+        kfree(module_memory);
         return NULL;
     }
 
@@ -253,24 +301,22 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
     if (!mod->init) {
         printf("LOADER: No module_init() found in %s\n", 0xFFFF00, name);
     } else {
-        printf("LOADER: init pointer = 0x%x\n", 0xFFFFFF, (uint64_t)mod->init);
+        if (DEBUG) printf("LOADER: init pointer = 0x%x\n", 0xFFFFFF, (uint64_t)mod->init);
 
-        printf("LOADER: About to execute module_init()\n", 0xFFFF00);
+        if (DEBUG) printf("LOADER: About to execute module_init()\n", 0xFFFF00);
 
         mod->init();
 
-        printf("LOADER: Returned from module_init()\n", 0x00FF00);
+        if (DEBUG) printf("LOADER: Returned from module_init()\n", 0x00FF00);
 
-        printf("LOADER: Module %s successfully initialized!\n", 0x00FF00, name);
+        if (DEBUG) printf("LOADER: Module %s successfully initialized!\n", 0x00FF00, name);
     }
 
     return mod;
 }
 
 kernel_module_t *load_module_from_file(const char *filepath) {
-    if (!ENABLE_KERMO) { printf("Cannot load module '%s', kernel modules are broken and therefor disabled.\n", 0xFF0000, filepath); return NULL; }
-
-    printf("Fetching module from %s...\n", 0x00FFFF, filepath);
+    if (DEBUG) printf("Fetching module from %s...\n", 0x00FFFF, filepath);
 
     vfs_node_t *mod_file = vfs_open(filepath, VFS_FLAG_READ);
     if (!mod_file) {
@@ -294,7 +340,7 @@ kernel_module_t *load_module_from_file(const char *filepath) {
 
         vfs_read(mod_file, file_buffer, file_size, file_offset);
 
-        loaded_mod = load_module(filepath, file_buffer);
+        loaded_mod = load_module(filepath, file_buffer, file_size);
 
         kfree(file_buffer);
     } else {

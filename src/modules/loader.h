@@ -15,7 +15,7 @@ typedef struct {
     void (*cleanup)(void);
 } kernel_module_t;
 
-kernel_module_t *load_module(const char *name, uint8_t *file_buffer);
+kernel_module_t *load_module(const char *name, uint8_t *file_buffer, size_t file_size);
 kernel_module_t *load_module_from_file(const char *path);
 
 #endif

@@ -2,10 +2,10 @@
 
 #include "fb.h"
 #include <stdarg.h>
-#include "../arch/x86_64/spinlock.h"
-#include "../drivers/memory/heap.h"
-#include "../fs/fd.h"
-#include "../modules/ksym.h"
+#include "arch/x86_64/spinlock.h"
+#include "drivers/memory/heap.h"
+#include "fs/fd.h"
+#include "modules/ksym.h"
 
 #define FONT_WIDTH  8
 #define FONT_HEIGHT 16

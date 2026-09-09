@@ -2,7 +2,7 @@
 
 #include "vmm.h"
 #include "pmm.h"
-#include "../../cmdline.h"
+#include "cmdline.h"
 
 static uint64_t *pml4;
 

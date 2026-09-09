@@ -2,10 +2,10 @@
 
 #include "loader.h"
 #include "elf.h"
-#include "../cmdline.h"
-#include "../drivers/fb.h"
-#include "../drivers/memory/pmm.h"
-#include "../drivers/memory/vmm.h"
+#include "cmdline.h"
+#include "drivers/fb.h"
+#include "drivers/memory/pmm.h"
+#include "drivers/memory/vmm.h"
 
 uint64_t elf_load(void *elf_binary, uint64_t user_pml4) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf_binary;
