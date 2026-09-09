@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "thread.h"
-#include "drivers/memory/heap.h"
+#include "mm/heap.h"
 #include "drivers/fb.h"
 #include "cmdline.h"
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "initramfs.h"
-#include "drivers/memory/heap.h"
+#include "mm/heap.h"
 #include "lib/string.h"
 
 #define MAX_RAMFS_NODES 128

@@ -2,6 +2,7 @@
 
 #include "pmm.h"
 #include "cmdline.h"
+#include "drivers/fb.h"
 
 uint64_t hhdm_offset = 0;
 static uint8_t *bitmap = NULL;

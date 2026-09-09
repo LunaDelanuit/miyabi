@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "limine/include/limine.h"
+#include "limine.h"
 #include "fs/vfs.h"
 
 extern volatile struct limine_framebuffer_request framebuffer_request;

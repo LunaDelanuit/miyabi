@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 
-#include "modules/loader.h"
 #include <stdint.h>
+
+/* x86_64 specific headers */
 #if defined(__x86_64__)
     #include "arch/x86_64/gdt.h"
     #include "arch/x86_64/idt.h"
@@ -12,24 +13,33 @@
     #error "Unsupported architecture. Compile for x86_64."
 #endif
 
-#include "limine/include/limine.h"
+/* For limine_module_request */
+#include "limine.h"
 
 #include "cmdline.h"
 
-#include "drivers/memory/pmm.h"
-#include "drivers/memory/vmm.h"
-#include "drivers/memory/heap.h"
+#include "modules/loader.h"
+
+/* Memory related headers */
+#include "mm/pmm.h"
+#include "mm/vmm.h"
+#include "mm/heap.h"
+
+/* Driver related headers */
 #include "drivers/fb.h"
 
+/* Filesystem related headers */
 #include "fs/vfs.h"
 #include "fs/fd.h"
 #include "fs/devfs.h"
 #include "fs/initramfs.h"
 
+/* Elf on a shelf */
 #include "elf/loader.h"
 
-extern void switch_to_user_space(uint64_t user_stack, uint64_t user_func);
+extern void switch_to_user_space(uint64_t user_stack, uint64_t user_func); /* Defined in arch/x86_64/user.asm */
 
+/* Define the Limine Module Request */
 __attribute__((used, section(".requests")))
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST_ID,
@@ -46,15 +56,18 @@ static void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" :: "a"(val), "Nd"(port));
 }
 
+/* Main kernel code */
 void _start(void) {
-    __asm__ volatile("cli");
+    __asm__ volatile("cli"); /* Disable interrupts, though apparently removing this
+                                line does nothing, meaning another cli is being called again.
+                                Where? ¯\_(ツ)_/¯ */
 
     remap_pic(32, 40);
 
     init_gdt();
     init_idt();
 
-    init_fb();
+    init_fb(); /* Initialize the framebuffer for early logging. */
     clear(0x000000);
 
     read_boot_cmdline();
@@ -70,9 +83,12 @@ void _start(void) {
 
     init_scheduler();
 
-    __asm__ volatile("sti");
+    __asm__ volatile("sti"); /* Enable interrupts, though removing this
+                                line also does absolutely nothing... I think... */
 
     printf("\n", 0x000000);
+
+    /* Initialize the DevFS at /dev */
 
     vfs_node_t *devfs_root_node = init_devfs();
 
@@ -103,10 +119,12 @@ void _start(void) {
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
+    /* Load modules passed from cmdline boot options */
     for (size_t i = 0; i < boot_module_count(); i++) {
         load_module_from_file(boot_module_path(i));
     }
 
+    /* Test ELF executable processing on user space. */
     vfs_node_t *test_node = vfs_open("/test", VFS_FLAG_READ);
     if (!test_node) {
         printf("/test does not exist.\n", 0xFF0000);
@@ -118,12 +136,20 @@ void _start(void) {
         vfs_read(test_node, elf_buffer, file_size, 0);
         vfs_close(test_node);
 
+        /*
+         * User space programs require their own address space
+         * to not accidentally modify the kernel's mappings.
+         */
          uint64_t user_pml4_phys = vmm_create_user_pml4();
          if (!user_pml4_phys) {
              printf("Failed to create user address space.\n", 0xFF0000);
              for (;;) __asm__ volatile("hlt");
          }
 
+         /*
+          * Keep the kernel PML4; we'll need it to return it after
+          * setting up the user address space.
+          */
          uint64_t kernel_pml4_phys;
          __asm__ volatile("mov %%cr3, %0" : "=r"(kernel_pml4_phys));
 
@@ -135,11 +161,19 @@ void _start(void) {
              uint64_t stack_phys = (uint64_t)pmm_alloc();
              uint64_t user_stack_virtual = 0x7FFFFFFF0000;
 
+             /*
+              * Keep the stack in user space rather than relying on
+              * the kernel stack, since user code cannot have access to it.
+              */
              vmm_map_page(user_stack_virtual, stack_phys, PTE_PRESENT | PTE_USER | PTE_WRITE);
 
              uint8_t *stack_virt = (uint8_t *)phys_to_virt(stack_phys);
              for (int i = 0; i < 4096; i++) stack_virt[i] = 0;
 
+            /*
+             * ELF loading needs kernel mappings; restore the
+             * kernel address space before performing the transition to the third ring.
+             */
              vmm_switch_pml4(kernel_pml4_phys);
 
              if (DEBUG) printf("Entering user space...\n", 0xAAAAFF);
@@ -152,3 +186,13 @@ void _start(void) {
     if (DEBUG) printf("Reached end of kernel.\n", 0xFF00FF);
     for (;;) __asm__ volatile("hlt");
 }
+
+/*
+ * Y'know, I kinda forgot what a PML4 even is.
+ * I am writing these comments WAY too late.
+ *
+ * How long has it been? About 5 months of
+ * kernel development with barely any comments?
+ *
+ * I need to grow this habit...
+ */

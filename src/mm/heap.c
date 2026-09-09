@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "vmm.h"
 #include "pmm.h"
+#include "drivers/fb.h"
 #include "cmdline.h"
 #include "modules/ksym.h"
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "devfs.h"
-#include "drivers/memory/heap.h"
+#include "mm/heap.h"
 
 #include <stddef.h>
 

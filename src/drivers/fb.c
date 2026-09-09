@@ -3,7 +3,7 @@
 #include "fb.h"
 #include <stdarg.h>
 #include "arch/x86_64/spinlock.h"
-#include "drivers/memory/heap.h"
+#include "mm/heap.h"
 #include "fs/fd.h"
 #include "modules/ksym.h"
 

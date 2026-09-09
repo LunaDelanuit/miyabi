@@ -1,0 +1,10 @@
+# So ClangD can SHUT UP about printf()
+
+CompileFlags:
+    Add:
+        - -ffreestanding
+        - -fno-builtin
+
+Diagnostics:
+    Suppress:
+        - unused-includes

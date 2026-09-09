@@ -1,7 +1,7 @@
 #ifndef CMDLINE_H
 #define CMDLINE_H
 
-#include "limine/include/limine.h"
+#include "limine.h"
 #include <stdbool.h>
 #include <stddef.h>
 

@@ -4,7 +4,7 @@
 #include "loader.h"
 #include "elf/elf.h"
 #include "drivers/fb.h"
-#include "drivers/memory/heap.h"
+#include "mm/heap.h"
 #include "fs/vfs.h"
 #include "cmdline.h"
 

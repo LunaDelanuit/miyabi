@@ -2,6 +2,7 @@
 
 #include "vmm.h"
 #include "pmm.h"
+#include "drivers/fb.h"
 #include "cmdline.h"
 
 static uint64_t *pml4;
