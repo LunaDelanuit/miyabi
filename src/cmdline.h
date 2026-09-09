@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 extern bool DEBUG;
+extern bool ENABLE_KERMO;
 
 extern volatile struct limine_executable_cmdline_request cmdline_request;
 

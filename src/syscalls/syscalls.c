@@ -27,16 +27,6 @@ static int64_t sys_read(int fd, char *buf, uint64_t count) {
     return 0;
 }
 
-static int64_t sys_write(int fd, const char *buf, uint64_t count) {
-    if (fd == 1 || fd == 2) { // stdout || stderr
-        for (uint64_t i = 0; i < count; i++) {
-            char str[2] = {buf[i], 0};
-            printf(str, 0xFFFFFF);
-        }
-    }
-    return -1;
-}
-
 void syscall_handler(struct interrupt_frame *frame) {
     switch (frame->rax) {
         case 0:

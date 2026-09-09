@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "../arch/x86_64/spinlock.h"
 #include "../drivers/memory/heap.h"
+#include "../fs/fd.h"
 #include "../modules/ksym.h"
 
 #define FONT_WIDTH  8
@@ -31,6 +32,35 @@ static uint32_t back;
 static uint32_t default_fg = 0xFFFFFF;
 
 static vfs_node_t *fb_vfs_node = NULL;
+
+static int validate_user_pointer(const void *ptr, size_t size) {
+    uint64_t addr = (uint64_t)ptr;
+    if (addr + size < addr || addr >= 0x0000800000000000) {
+        return 0;
+    }
+    return 1;
+}
+
+int64_t sys_write(int fd, const void *buf, uint64_t count) {
+    vfs_node_t *node = fd_get_node(fd);
+    if (!node) {
+        return -1;
+    }
+
+    if (!node->write) {
+        return -1;
+    }
+
+    if (!validate_user_pointer(buf, count)) {
+        return -1;
+    }
+
+    default_fg = 0xFFFFFFF;
+
+    uint64_t bytes_written = node->write(node, (uint8_t *)buf, count, 0);
+
+    return (int64_t)bytes_written;
+}
 
 void init_fb(void) {
     if (!framebuffer_request.response ||

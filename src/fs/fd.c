@@ -2,15 +2,8 @@
 
 #include "fd.h"
 #include "vfs.h"
-#include "../drivers/fb.h"
 
 #define MAX_OPEN_FILES 16
-
-typedef struct {
-    vfs_node_t *node;
-    uint64_t offset;
-    int flags;
-} file_descriptor_t;
 
 static file_descriptor_t fd_table[MAX_OPEN_FILES];
 
@@ -18,6 +11,16 @@ void init_fds(void) {
     for (int i = 0; i < MAX_OPEN_FILES; i++) {
         fd_table[i].node = 0;
         fd_table[i].offset = 0;
+        fd_table[i].flags = 0;
+    }
+
+    vfs_node_t *fb_node = vfs_get_node_by_path("/dev/fb0");
+    if (fb_node) {
+        fd_table[1].node = fb_node;
+        fd_table[1].flags = VFS_FLAG_WRITE;
+
+        fd_table[2].node =  fb_node;
+        fd_table[2].flags = VFS_FLAG_WRITE;
     }
 }
 
@@ -26,6 +29,7 @@ int fd_alloc(vfs_node_t *node) {
         if (!fd_table[i].node) {
             fd_table[i].node = node;
             fd_table[i].offset = 0;
+            fd_table[i].flags = 0;
             return i;
         }
     }
@@ -35,4 +39,11 @@ int fd_alloc(vfs_node_t *node) {
 vfs_node_t *fd_get_node(int fd) {
     if (fd < 0 || fd >= MAX_OPEN_FILES) return 0;
     return fd_table[fd].node;
+}
+
+void fd_close(int fd) {
+    if (fd < 0 || fd >= MAX_OPEN_FILES) return;
+    fd_table[fd].node = 0;
+    fd_table[fd].offset = 0;
+    fd_table[fd].flags = 0;
 }

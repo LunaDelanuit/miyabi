@@ -46,8 +46,8 @@ Optionally:
 
 In the project root, simply run `make`; an ISO file will be generated in ./build.
 Alternatively, type `make run` to emulate Miyabi using QEMU.
-You can also add `FONT=` followed by the path to either a ttf or hex font, and it will be used in the build!
-The `bin` folder has some fonts already, the makefile by default will use the Unifont file.
+You can also add `FONT=` followed by the path to either a ttf, hex, or bdf font, and it will be used in the build!
+The `bin` folder has some fonts already, the makefile by default will use Terminus.
 
 > [!WARNING]
 > The Framebuffer expects an 8x16 font, please use a font desgined for the 8x16 restriction.
@@ -67,8 +67,12 @@ Limited to:
 
 * x86_64 Only
 * No APIC
-* Very limited kernel modules (currently broken)
+* Very limited kernel modules
 * Barely usuable (for now)
+
+> [!CAUTION]
+> Kernel modules are currently broken. You can enable them using the boot option `--ENABLE_KERMO`.  
+> Be cautious as it can crash Miyabi.
 
 Does not have:
 

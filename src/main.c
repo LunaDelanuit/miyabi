@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "modules/loader.h"
 #include <stdint.h>
 #if defined(__x86_64__)
     #include "arch/x86_64/gdt.h"
@@ -21,6 +22,7 @@
 #include "drivers/fb.h"
 
 #include "fs/vfs.h"
+#include "fs/fd.h"
 #include "fs/devfs.h"
 #include "fs/initramfs.h"
 
@@ -90,6 +92,7 @@ void _start(void) {
 
     if (dev_mountpoint) {
         vfs_mount(dev_mountpoint, devfs_root_node);
+        init_fds();
         printf("VFS: DevFS mounted to /dev successfully.\n", 0x00FF00);
     } else {
         printf("VFS: Could not find /dev in Initramfs!\n", 0xFF0000);
@@ -100,48 +103,50 @@ void _start(void) {
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
     printf("GNU General Public License v3.0-or-later.\n\n", 0xFF2200);
 
-   vfs_node_t *test_node = vfs_open("/test", VFS_FLAG_READ);
-   if (!test_node) {
-       printf("/test does not exist.", 0xFF0000);
-       for (;;) __asm__ volatile("hlt");
-   }
+    kernel_module_t *test_mod = (kernel_module_t *)load_module_from_file("/lib/modules/test_module.ko");
 
-   uint64_t file_size = test_node->length;
-   uint8_t *elf_buffer = (uint8_t *)kmalloc(file_size);
+    vfs_node_t *test_node = vfs_open("/test", VFS_FLAG_READ);
+    if (!test_node) {
+        printf("/test does not exist.\n", 0xFF0000);
+    } else {
 
-   vfs_read(test_node, elf_buffer, file_size, 0);
-   vfs_close(test_node);
+        uint64_t file_size = test_node->length;
+        uint8_t *elf_buffer = (uint8_t *)kmalloc(file_size);
 
-    uint64_t user_pml4_phys = vmm_create_user_pml4();
-    if (!user_pml4_phys) {
-        printf("Failed to create user address space.\n", 0xFF0000);
-        for (;;) __asm__ volatile("hlt");
+        vfs_read(test_node, elf_buffer, file_size, 0);
+        vfs_close(test_node);
+
+         uint64_t user_pml4_phys = vmm_create_user_pml4();
+         if (!user_pml4_phys) {
+             printf("Failed to create user address space.\n", 0xFF0000);
+             for (;;) __asm__ volatile("hlt");
+         }
+
+         uint64_t kernel_pml4_phys;
+         __asm__ volatile("mov %%cr3, %0" : "=r"(kernel_pml4_phys));
+
+         vmm_switch_pml4(user_pml4_phys);
+
+         uint64_t entry_point = elf_load(elf_buffer, user_pml4_phys);
+
+         if (entry_point) {
+             uint64_t stack_phys = (uint64_t)pmm_alloc();
+             uint64_t user_stack_virtual = 0x7FFFFFFF0000;
+
+             vmm_map_page(user_stack_virtual, stack_phys, PTE_PRESENT | PTE_USER | PTE_WRITE);
+
+             uint8_t *stack_virt = (uint8_t *)phys_to_virt(stack_phys);
+             for (int i = 0; i < 4096; i++) stack_virt[i] = 0;
+
+             vmm_switch_pml4(kernel_pml4_phys);
+
+             if (DEBUG) printf("Entering user space...\n", 0xAAAAFF);
+
+             vmm_switch_pml4(user_pml4_phys);
+             switch_to_user_space(user_stack_virtual + 3072, entry_point);
+         }
     }
 
-    uint64_t kernel_pml4_phys;
-    __asm__ volatile("mov %%cr3, %0" : "=r"(kernel_pml4_phys));
-
-    vmm_switch_pml4(user_pml4_phys);
-
-    uint64_t entry_point = elf_load(elf_buffer, user_pml4_phys);
-
-    if (entry_point) {
-        uint64_t stack_phys = (uint64_t)pmm_alloc();
-        uint64_t user_stack_virtual = 0x7FFFFFFF0000;
-
-        vmm_map_page(user_stack_virtual, stack_phys, PTE_PRESENT | PTE_USER | PTE_WRITE);
-
-        uint8_t *stack_virt = (uint8_t *)phys_to_virt(stack_phys);
-        for (int i = 0; i < 4096; i++) stack_virt[i] = 0;
-
-        vmm_switch_pml4(kernel_pml4_phys);
-
-        if (DEBUG) printf("Entering user space...\n", 0xAAAAFF);
-
-        /* The iretq frame below executes at a user virtual address. */
-        vmm_switch_pml4(user_pml4_phys);
-        switch_to_user_space(user_stack_virtual + 3072, entry_point);
-    }
-
+    if (DEBUG) printf("Reached end of kernel.\n", 0xFF00FF);
     for (;;) __asm__ volatile("hlt");
 }

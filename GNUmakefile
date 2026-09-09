@@ -10,7 +10,7 @@ BIN_DIR := bin
 BUILD := build
 ISO_DIR := $(BUILD)/iso
 
-FONT ?= $(BIN_DIR)/unifont_all-17.0.04.hex
+FONT ?= $(BIN_DIR)/ter-u16n.bdf
 FONT_BIN := $(BUILD)/font.bin
 FONT_OBJ := $(BUILD)/font.o
 

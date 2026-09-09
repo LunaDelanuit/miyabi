@@ -10,6 +10,8 @@
 
 extern volatile struct limine_framebuffer_request framebuffer_request;
 
+int64_t sys_write(int fd, const void *buf, uint64_t count);
+
 void init_fb(void);
 void clear(uint32_t color);
 void set_cursor(size_t x, size_t y);

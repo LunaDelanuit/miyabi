@@ -34,6 +34,7 @@ static bool check_flag(const char *cmdline, const char *flag) {
 }
 
 bool DEBUG = false;
+bool ENABLE_KERMO = false;
 
 void read_boot_cmdline(void) {
     if (cmdline_request.response== NULL) {
@@ -50,5 +51,9 @@ void read_boot_cmdline(void) {
 
     if (check_flag(cmdline, "--debug")) {
         DEBUG = true;
+    }
+
+    if (check_flag(cmdline, "--ENABLE_KERMO")){
+        ENABLE_KERMO = true;
     }
 }

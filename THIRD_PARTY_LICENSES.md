@@ -59,10 +59,7 @@ Please use this link to view the Limine Protocol:
 
 ### Terminus Font
 
-> [!WARNING]
-> bdf font files are not yet supported in the makefile.
-
-Terminus Font is a font I really like, but have yet to add support.
+Terminus is the default font for Miyabi.
 
 Copyright (C) 2001-2026 Dimitar Zhekov.
 
@@ -100,7 +97,7 @@ THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.
 
 ### GNU Unifont
 
-GNU Unifont is the default Unicode font for Miyabi.
+Unifont is a Unicode-first font developed as part of the GNU project.
 
 Copyright (C) 1998-2026 Roman Czyborra, Paul Hardy, and contributors.
 

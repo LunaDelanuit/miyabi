@@ -1,9 +1,9 @@
+#!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-#!/usr/bin/env python3
+from PIL import Image, ImageFont, ImageDraw
 import sys
 import os
-from PIL import Image, ImageFont, ImageDraw
 
 
 def hex_to_bin(path):
@@ -51,7 +51,6 @@ def ttf_to_bin(path):
         ch = chr(c)
 
         try:
-            # Skip missing glyphs
             if not font.getmask(ch):
                 continue
         except Exception:
@@ -91,15 +90,52 @@ def ttf_to_bin(path):
     return data
 
 
+def bdf_to_bin(path):
+    data = bytearray(256 * 16)
+    current_encoding = None
+    in_bitmap = False
+    bitmap_rows = []
+
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.strip()
+
+            if line.startswith("ENCODING "):
+                parts = line.split()
+                if len(parts) > 1:
+                    try:
+                        current_encoding = int(parts[1])
+                    except ValueError:
+                        current_encoding = None
+            elif line == "BITMAP":
+                in_bitmap = True
+                bitmap_rows = []
+            elif line == "ENDCHAR":
+                if in_bitmap and current_encoding is not None and 0 <= current_encoding < 256:
+                    for row_idx, hex_row in enumerate(bitmap_rows[:16]):
+                        try:
+                            row_bytes = bytes.fromhex(hex_row)
+                            if row_bytes:
+                                data[current_encoding * 16 + row_idx] = row_bytes[0]
+                        except ValueError:
+                            continue
+                in_bitmap = False
+                current_encoding = None
+            elif in_bitmap:
+                bitmap_rows.append(line)
+
+    return data
+
+
 def convert(inp, out):
     ext = os.path.splitext(inp)[1].lower()
 
     if ext == ".hex":
         data = hex_to_bin(inp)
-
     elif ext == ".ttf":
         data = ttf_to_bin(inp)
-
+    elif ext == ".bdf":
+        data = bdf_to_bin(inp)
     else:
         raise SystemExit("Unsupported font format")
 

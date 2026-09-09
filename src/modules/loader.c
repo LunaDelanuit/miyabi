@@ -6,6 +6,7 @@
 #include "../drivers/fb.h"
 #include "../drivers/memory/heap.h"
 #include "../fs/vfs.h"
+#include "../cmdline.h"
 
 static int elf_validate(Elf64_Ehdr *ehdr) {
     if (ehdr->e_ident[EI_MAG0] != ELFMAG0 ||
@@ -267,8 +268,7 @@ kernel_module_t *load_module(const char *name, uint8_t *file_buffer) {
 }
 
 kernel_module_t *load_module_from_file(const char *filepath) {
-    printf("Cannot load module '%s', kernel modules are broken and therefor disabled.\n", 0xFF0000, filepath);
-    return NULL;
+    if (!ENABLE_KERMO) { printf("Cannot load module '%s', kernel modules are broken and therefor disabled.\n", 0xFF0000, filepath); return NULL; }
 
     printf("Fetching module from %s...\n", 0x00FFFF, filepath);
 
