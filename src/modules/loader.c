@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "ksym.h"
-#include "loader.h"
+#include "modules/ksym.h"
+#include "modules/loader.h"
 #include "elf/elf.h"
 #include "drivers/fb.h"
 #include "mm/heap.h"

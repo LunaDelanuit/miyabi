@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "fb.h"
+#include "drivers/fb.h"
 #include <stdarg.h>
 #include "arch/x86_64/spinlock.h"
 #include "mm/heap.h"

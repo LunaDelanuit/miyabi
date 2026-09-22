@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "fd.h"
-#include "vfs.h"
+#include "fs/fd.h"
+#include "fs/vfs.h"
 
 #define MAX_OPEN_FILES 16
 

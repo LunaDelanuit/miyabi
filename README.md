@@ -15,6 +15,8 @@ but also less complex and tied together than a Monolithic-kernel, allowing theor
 
 ## License
 
+### Source Code
+
 Copyright (C) 2026 Luna Delanuit and contributers.
 
 This program is free software: you can redistribute it and/or modify
@@ -26,6 +28,10 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
+
+### Header Files
+
+See `COPYING.LESSER`.
 
 ## Build
 

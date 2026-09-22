@@ -1,0 +1,2 @@
+I was originally planning to support AHCI, however I decided to work on IDE ATA for now.
+I'll leave this here for the future when I - or someone else - wants to add AHCI and SATA support.

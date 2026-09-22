@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "gdt.h"
+#include "arch/x86_64/gdt.h"
 
 struct gdt_entry {
     uint16_t limit_low;

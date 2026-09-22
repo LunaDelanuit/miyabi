@@ -10,13 +10,15 @@ BIN_DIR := bin
 BUILD := build
 ISO_DIR := $(BUILD)/iso
 
+DISK_IMG := disk.img
+
 FONT ?= $(BIN_DIR)/ter-u16n.bdf
 FONT_BIN := $(BUILD)/font.bin
 FONT_OBJ := $(BUILD)/font.o
 
 INITRAMFS_TAR := $(BUILD)/initramfs.tar
 
-CFLAGS := -ffreestanding -fno-stack-protector -fno-pic -m64 -mcmodel=kernel -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -mno-80387 -O2 -Wall -Wextra -I$(SRC_DIR) -I$(SRC_DIR)/limine/include
+CFLAGS := -ffreestanding -fno-stack-protector -fno-pic -m64 -mcmodel=kernel -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -mno-80387 -O2 -Wall -Wextra -I$(SRC_DIR) -I$(SRC_DIR)/limine/include -Iinclude
 ASFLAGS := -f elf64
 LDFLAGS := -nostdlib -z max-page-size=0x1000 -T linker.ld
 
@@ -82,10 +84,17 @@ $(ISO): $(ISO_DIR)
 		$(ISO_DIR) -o $(ISO)
 	$(LIMINE_BIN) bios-install $(ISO)
 
-run: $(ISO)
+$(DISK_IMG):
+	mkdir -p $(BUILD)
+	dd if=/dev/zero of=$(DISK_IMG) bs=1M count=64
+	(echo o; echo n; echo p; echo 1; echo 2048; echo +32M; echo t; echo 83; echo w) | fdisk $(DISK_IMG)
+	printf "MIYABI_PART1_TEST_SIGNATURE" | dd of=$(DISK_IMG) bs=512 seek=2048 conv=notrunc
+
+run: $(ISO) $(DISK_IMG)
 	qemu-system-x86_64 -d int,cpu_reset -D qemu.log \
 	-drive if=pflash,format=raw,unit=0,file=/usr/share/ovmf/x64/OVMF.4m.fd,readonly=on \
-	-cdrom $(ISO)
+	-drive file=$(DISK_IMG),format=raw,if=ide,bus=0,unit=0,media=disk \
+	-drive file=$(ISO),format=raw,if=ide,bus=1,unit=0,media=cdrom
 
 clean:
 	rm -rf $(BUILD)

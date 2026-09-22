@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <stdint.h>
-#include "keyboard.h"
+#include "arch/x86_64/keyboard.h"
 #include "drivers/fb.h"
 
 static inline uint8_t inb(uint16_t port) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "ksym.h"
+#include "modules/ksym.h"
 
 extern kernel_symbol_t __start_ksymtab[];
 extern kernel_symbol_t __stop_ksymtab[];

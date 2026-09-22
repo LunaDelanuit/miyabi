@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "initramfs.h"
+#include "fs/initramfs.h"
 #include "mm/heap.h"
 #include "lib/string.h"
 

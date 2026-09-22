@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-#include <stdint.h>
-
 /* x86_64 specific headers */
 #if defined(__x86_64__)
     #include "arch/x86_64/gdt.h"
@@ -27,12 +25,15 @@
 
 /* Driver related headers */
 #include "drivers/fb.h"
+#include "drivers/storage/ata.h"
+#include "drivers/storage/block.h"
 
 /* Filesystem related headers */
 #include "fs/vfs.h"
 #include "fs/fd.h"
-#include "fs/devfs.h"
+#include "fs/devfs/devfs.h"
 #include "fs/initramfs.h"
+#include "fs/part/mbr.h"
 
 /* Elf on a shelf */
 #include "elf/loader.h"
@@ -54,6 +55,45 @@ static inline uint8_t inb(uint16_t port) {
 
 static void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" :: "a"(val), "Nd"(port));
+}
+
+/* Test block abstraction */
+void test_block_abstraction(void) {
+    block_dev_t *sda = get_block_device("sda");
+    if (!sda) {
+        printf("TEST: Failed to locate 'sda' device!\n", 0xFF0000);
+        return;
+    }
+
+    uint8_t sector_buf[512];
+    if (block_read(sda, 0, 1, sector_buf)) {
+        printf("TEST: Successfully read sector 0 from 'sda'\n", 0x00FF00);
+        mbr_parse(sector_buf);
+    } else {
+        printf("TEST: Failed to read sector 0 from 'sda'\n", 0xFF0000);
+        return;
+    }
+
+    block_dev_t *sda1 = get_block_device("sda1");
+    if (!sda1) {
+        printf("TEST: Failed to locate 'sda1' partition device!\n", 0xFF0000);
+        return;
+    }
+
+    printf("TEST: Successfully retrieved 'sda1'! Testing relative read...\n", 0x00FF00);
+
+    uint8_t part_buf[512];
+    if (block_read(sda1, 0, 1, part_buf)) {
+        printf("TEST: Successfully read relative sector 0 from 'sda1'!\n", 0x00FF00);
+    } else {
+        printf("TEST: Relative sector read on 'sda1' failed!\n", 0xFF0000);
+    }
+
+    if (part_buf[0] == 'M' && part_buf[1] == 'I' && part_buf[2] == 'Y' && part_buf[3] == 'A') {
+        printf("TEST SUC: sda1 relative LBA 0 mapped perfectly to absolute LBA 2048!\n", 0x00FF00);
+    } else {
+        printf("TEST BAD: Data mismatch on sda1 relative read.\n", 0xFF0000);
+    }
 }
 
 /* Main kernel code */
@@ -114,6 +154,11 @@ void _start(void) {
         printf("VFS: Could not find /dev in Initramfs!\n", 0xFF0000);
     }
 
+    /* Initialize storage-related thingies */
+    init_block_subsystem();
+
+    ata_init();
+
     printf("\nWelcome to Miyabi ", 0xFFFFFF);
     printf("0.1\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
@@ -123,6 +168,17 @@ void _start(void) {
     for (size_t i = 0; i < boot_module_count(); i++) {
         load_module_from_file(boot_module_path(i));
     }
+
+    uint8_t sector_buf[512];
+    if (ata_read_sector28(0, sector_buf)) {
+        uint16_t magic = *(uint16_t *)&sector_buf[510];
+        printf("Sector 0 Boot Signature: 0x%x\n", 0x00FFFF, magic);
+        mbr_parse(sector_buf);
+    }
+
+    test_block_abstraction();
+
+    goto kend; /* Jump to end of kernel for test */
 
     /* Test ELF executable processing on user space. */
     vfs_node_t *test_node = vfs_open("/test", VFS_FLAG_READ);
@@ -183,16 +239,7 @@ void _start(void) {
          }
     }
 
+    kend:
     if (DEBUG) printf("Reached end of kernel.\n", 0xFF00FF);
     for (;;) __asm__ volatile("hlt");
 }
-
-/*
- * Y'know, I kinda forgot what a PML4 even is.
- * I am writing these comments WAY too late.
- *
- * How long has it been? About 5 months of
- * kernel development with barely any comments?
- *
- * I need to grow this habit...
- */

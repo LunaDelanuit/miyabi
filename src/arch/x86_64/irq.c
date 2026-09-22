@@ -1,9 +1,9 @@
 #include <stdint.h>
-#include "exceptions.h"
+#include "arch/x86_64/exceptions.h"
 #include "drivers/fb.h"
-#include "pic.h"
-#include "keyboard.h"
-#include "thread.h"
+#include "arch/x86_64/pic.h"
+#include "arch/x86_64/keyboard.h"
+#include "arch/x86_64/thread.h"
 
 static volatile uint64_t ticks = 0;
 

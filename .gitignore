@@ -6,3 +6,6 @@ qemu.log
 
 # editor settings
 /.vscode
+
+# random files
+disk.img

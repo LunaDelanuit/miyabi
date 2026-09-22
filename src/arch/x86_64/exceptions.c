@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "exceptions.h"
+#include "arch/x86_64/exceptions.h"
 #include "drivers/fb.h"
 
 static const char *exception_name(uint64_t vector) {
@@ -47,8 +47,6 @@ static void decode_page_fault(uint64_t error) {
 }
 
 void exception_handler(interrupt_frame_t *frame) {
-    clear(0x220000);
-
     printf("\n========== KERNEL EXCEPTION ==========\n", 0xFF0000);
 
     printf("Exception: ", 0xFF0000);

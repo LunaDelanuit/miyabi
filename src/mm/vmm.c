@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "vmm.h"
-#include "pmm.h"
+#include "mm/vmm.h"
+#include "mm/pmm.h"
 #include "drivers/fb.h"
 #include "cmdline.h"
 

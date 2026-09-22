@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "idt.h"
+#include "arch/x86_64/idt.h"
 #include "drivers/fb.h"
 
 #define IDT_ENTRIES 256

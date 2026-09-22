@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "loader.h"
-#include "elf.h"
+#include "elf/loader.h"
+#include "elf/elf.h"
 #include "cmdline.h"
 #include "drivers/fb.h"
 #include "mm/pmm.h"
