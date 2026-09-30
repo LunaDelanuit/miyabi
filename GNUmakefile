@@ -4,6 +4,7 @@ OBJCOPY := objcopy
 AS := nasm
 
 SRC_DIR := src
+LINKER := $(SRC_DIR)/linker.ld
 INITRAMFS_DIR := initramfs
 SCRIPTS_DIR := scripts
 BIN_DIR := bin
@@ -20,9 +21,9 @@ INITRAMFS_TAR := $(BUILD)/initramfs.tar
 
 CFLAGS := -ffreestanding -fno-stack-protector -fno-pic -m64 -mcmodel=kernel -mno-red-zone -mno-sse -mno-sse2 -mno-mmx -mno-80387 -O2 -Wall -Wextra -I$(SRC_DIR) -I$(SRC_DIR)/limine/include -Iinclude
 ASFLAGS := -f elf64
-LDFLAGS := -nostdlib -z max-page-size=0x1000 -T linker.ld
+LDFLAGS := -nostdlib -z max-page-size=0x1000 -T $(LINKER)
 
-KERNEL := $(BUILD)/kernel.elf
+KERNEL := $(BUILD)/miyabi.elf
 ISO := $(BUILD)/miyabi.iso
 
 LIMINE_BIN := limine

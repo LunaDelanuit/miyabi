@@ -9,7 +9,7 @@ _start:
     int 0x80
 
     mov rax, 0      ; miyabi syscall exit
-    mov rax, 0      ; exit code 0
+    mov rdi, 0      ; exit code 0
     int 0x80
 
 section .data

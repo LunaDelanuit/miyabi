@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #include "fs/vfs.h"
 #include "lib/string.h"
 #include "modules/ksym.h"

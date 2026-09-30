@@ -1,4 +1,27 @@
-As of July 31st, 2026, I have decided to rename Vale to Miyabi. This change is partly due to my new identity, and I would prefer not to have any ties to my old identity which I dislike. Miyabi is personally a better name for the project as it means "elegance" in Japanese, which is the project's core philosophy.
+> [!IMPORTANT]
+> Miyabi is being archived in favour of a new operating system called [Mellow](https://www.github.com/lunadelanuit/mellow).
+
+### Why?
+
+As I worked on Miyabi, I felt like it wasn't really what I was looking for.  
+I started Miyabi when I new little about how operating systems work, and I learned as I developed,  
+resulting in a weird state where old files (such as `fb.c`, `vfs.c`) use preferences and styles I don't prefer  
+to use anymore.
+
+Miyabi used to be called *Vale* (named after an identity I don't use anymore, and I discourage  
+using the term when refering to Miyabi), before I got my idea of how I wanted the OS to look.  
+When I first developed Miyabi, I was primarily going for a Monolithic approach. When I wanted Miyabi to be modular, it was
+already quite late in my terms, and the implementation was rushed and buggy, which made dealing with
+kernel modules (excuse my language) a pain in the fucking ass.
+
+Whilst Miyabi was the furthest I've ever gone to making an operating system, I believe a fresh start is needed.  
+With **Mellow**, I'm able to make the design and what I want clear before starting work.  
+I'll be able to design the architecture, philosphy, and design straight from the beginning.
+
+That said, Miyabi will still be public, and if you ever believe Miyabi has potential, feel free  
+to fork it and continue development!
+
+ - Best regards, Luna Delanuit.
 
 # Miyabi
 

@@ -32,6 +32,7 @@
 #include "fs/vfs.h"
 #include "fs/fd.h"
 #include "fs/devfs/devfs.h"
+#include "fs/ext2/ext2.h"
 #include "fs/initramfs.h"
 #include "fs/part/mbr.h"
 
@@ -87,12 +88,6 @@ void test_block_abstraction(void) {
         printf("TEST: Successfully read relative sector 0 from 'sda1'!\n", 0x00FF00);
     } else {
         printf("TEST: Relative sector read on 'sda1' failed!\n", 0xFF0000);
-    }
-
-    if (part_buf[0] == 'M' && part_buf[1] == 'I' && part_buf[2] == 'Y' && part_buf[3] == 'A') {
-        printf("TEST SUC: sda1 relative LBA 0 mapped perfectly to absolute LBA 2048!\n", 0x00FF00);
-    } else {
-        printf("TEST BAD: Data mismatch on sda1 relative read.\n", 0xFF0000);
     }
 }
 
@@ -159,6 +154,8 @@ void _start(void) {
 
     ata_init();
 
+    ext2_init();
+
     printf("\nWelcome to Miyabi ", 0xFFFFFF);
     printf("0.1\n", 0xFFFFFF);
     printf("Copyright (c) 2026 Luna Delanuit and contributers, ", 0xCC00DD);
@@ -176,7 +173,17 @@ void _start(void) {
         mbr_parse(sector_buf);
     }
 
-    test_block_abstraction();
+    // test_block_abstraction();
+
+    vfs_fs_type_t *ext2 = vfs_find_filesystem("ext2");
+
+    if (ext2) {
+        block_dev_t *sda1 = get_block_device("sda1");
+
+        if (sda1) {
+            ext2->mount(sda1);
+        }
+    }
 
     goto kend; /* Jump to end of kernel for test */
 
